@@ -1,13 +1,20 @@
-import { Pool } from '@neondatabase/serverless';
-import { PrismaNeon } from '@prisma/adapter-neon';
-import { PrismaClient } from '@prisma/client';
+import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/prisma";
 
-const connectionString = process.env.DATABASE_URL!;
-const pool = new Pool({ connectionString });
-const adapter = new PrismaNeon(pool);
+export async function GET() {
+  const hashedPassword = await bcrypt.hash("admin123", 10);
 
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
+  const admin = await prisma.user.upsert({
+    where: { email: "admin@autop.tn" },
+    update: {},
+    create: {
+      email: "admin@autop.tn",
+      name: "Admin AUTOP",
+      password: hashedPassword,
+      role: "admin",
+    },
+  });
 
-export const prisma = globalForPrisma.prisma || new PrismaClient({ adapter });
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+  return NextResponse.json({ message: "Admin créé", admin: { id: admin.id, email: admin.email } });
+}
