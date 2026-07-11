@@ -12,7 +12,7 @@
       "static/chunks/fd9d1056-73012b02319151f6.js",
       "static/chunks/23-a7d9370810ea0f38.js",
       "static/chunks/main-app-9df1eb90ef73081a.js",
-      "static/css/dad05f0a4a45c60e.css",
+      "static/css/707201058ce69ee7.css",
       "static/chunks/998-bc338ace66eadf51.js",
       "static/chunks/app/layout-076f93cac10a2a8f.js"
     ],
@@ -23,8 +23,8 @@
       "static/chunks/main-app-9df1eb90ef73081a.js",
       "static/chunks/998-bc338ace66eadf51.js",
       "static/chunks/659-ce9dbe8326ce3f45.js",
-      "static/chunks/436-64eac00cdb81e627.js",
-      "static/chunks/app/admin/dashbord/page-efede9c448af6dda.js"
+      "static/chunks/110-015eead8ed914127.js",
+      "static/chunks/app/admin/dashbord/page-7b4875d2ad52d8cc.js"
     ],
     "/admin/login/page": [
       "static/chunks/webpack-730e0a774aa44243.js",
@@ -86,7 +86,7 @@
       "static/chunks/main-app-9df1eb90ef73081a.js",
       "static/chunks/998-bc338ace66eadf51.js",
       "static/chunks/138-66b5b835d7461790.js",
-      "static/chunks/app/mes-devis/page-2c22152ec5729344.js"
+      "static/chunks/app/mes-devis/page-bdb0904a4ee08b81.js"
     ],
     "/page": [
       "static/chunks/webpack-730e0a774aa44243.js",

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Download, CheckCircle, MessageCircle, FileText, Plus, FileSpreadsheet } from 'lucide-react';
 
 export default function DevisPage() {
@@ -18,6 +18,23 @@ export default function DevisPage() {
   const [submittedQuoteId, setSubmittedQuoteId] = useState<string | null>(null);
   
   const [items, setItems] = useState([{ reference: '', designation: '', quantity: 1 }]);
+  const [catalogue, setCatalogue] = useState<any[]>([]);
+  const [activeSuggestRow, setActiveSuggestRow] = useState<number | null>(null);
+  const [activeSuggestField, setActiveSuggestField] = useState<'ref' | 'desc' | null>(null);
+
+  useEffect(() => {
+    fetch('/api/products').then(r => r.json()).then(d => {
+      setCatalogue(Array.isArray(d) ? d : d.data || []);
+    }).catch(() => {});
+  }, []);
+
+  const getSuggestions = (text: string, field: 'ref' | 'desc') => {
+    if (!text || text.length < 1) return [];
+    return catalogue.filter(p => {
+      const target = field === 'ref' ? p.reference : p.name;
+      return target?.toLowerCase().includes(text.toLowerCase());
+    }).slice(0, 8);
+  };
 
   const handleAddItem = () => {
     setItems([...items, { reference: '', designation: '', quantity: 1 }]);
@@ -489,19 +506,85 @@ export default function DevisPage() {
         <label className="block text-xs font-semibold text-slate-400 mb-2">LISTE DES PIÈCES DEMANDÉES</label>
         <div className="space-y-3">
           {items.map((item, idx) => (
-            <div key={idx} className="flex gap-2">
-              <input 
-                placeholder="Réf" 
-                className="w-1/3 bg-slate-900 text-slate-100 p-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500 font-mono text-sm" 
-                value={item.reference} 
-                onChange={(e) => handleItemChange(idx, 'reference', e.target.value)} 
-              />
-              <input 
-                placeholder="Désignation (ex: Plaquettes de frein...)" 
-                className="flex-1 bg-slate-900 text-slate-100 p-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500 text-sm" 
-                value={item.designation} 
-                onChange={(e) => handleItemChange(idx, 'designation', e.target.value)} 
-              />
+            <div key={idx} className="flex gap-2 items-center">
+              <div className="w-1/3 relative">
+                <input 
+                  placeholder="Réf" 
+                  className="w-full bg-slate-900 text-slate-100 p-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500 font-mono text-sm uppercase" 
+                  value={item.reference} 
+                  onChange={(e) => {
+                    handleItemChange(idx, 'reference', e.target.value);
+                    setActiveSuggestRow(idx);
+                    setActiveSuggestField('ref');
+                  }}
+                  onFocus={() => {
+                    setActiveSuggestRow(idx);
+                    setActiveSuggestField('ref');
+                  }}
+                  onBlur={() => setTimeout(() => {
+                    setActiveSuggestRow(null);
+                    setActiveSuggestField(null);
+                  }, 200)}
+                />
+                {activeSuggestRow === idx && activeSuggestField === 'ref' && getSuggestions(item.reference, 'ref').length > 0 && (
+                  <div className="absolute left-0 right-0 z-50 mt-1 bg-slate-950 border border-slate-800 rounded-xl max-h-48 overflow-y-auto shadow-2xl">
+                    {getSuggestions(item.reference, 'ref').map(p => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                          handleItemChange(idx, 'reference', p.reference || '');
+                          handleItemChange(idx, 'designation', p.name || '');
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-slate-800 text-xs font-semibold text-slate-200 border-b border-slate-900 last:border-0 flex items-center justify-between"
+                      >
+                        <span className="text-red-400 font-mono font-bold">{p.reference}</span>
+                        <span className="text-slate-400 text-[10px] truncate max-w-[120px]">{p.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-1 relative">
+                <input 
+                  placeholder="Désignation (ex: Plaquettes de frein...)" 
+                  className="w-full bg-slate-900 text-slate-100 p-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500 text-sm uppercase" 
+                  value={item.designation} 
+                  onChange={(e) => {
+                    handleItemChange(idx, 'designation', e.target.value);
+                    setActiveSuggestRow(idx);
+                    setActiveSuggestField('desc');
+                  }}
+                  onFocus={() => {
+                    setActiveSuggestRow(idx);
+                    setActiveSuggestField('desc');
+                  }}
+                  onBlur={() => setTimeout(() => {
+                    setActiveSuggestRow(null);
+                    setActiveSuggestField(null);
+                  }, 200)}
+                />
+                {activeSuggestRow === idx && activeSuggestField === 'desc' && getSuggestions(item.designation, 'desc').length > 0 && (
+                  <div className="absolute left-0 right-0 z-50 mt-1 bg-slate-950 border border-slate-800 rounded-xl max-h-48 overflow-y-auto shadow-2xl">
+                    {getSuggestions(item.designation, 'desc').map(p => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                          handleItemChange(idx, 'reference', p.reference || '');
+                          handleItemChange(idx, 'designation', p.name || '');
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-slate-800 text-xs font-semibold text-slate-200 border-b border-slate-900 last:border-0 flex items-center justify-between"
+                      >
+                        <span className="text-white truncate max-w-[150px]">{p.name}</span>
+                        <span className="text-red-400 font-mono text-[9px]">{p.reference}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <input 
                 type="number" 
                 min={1} 

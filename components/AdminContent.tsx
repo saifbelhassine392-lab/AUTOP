@@ -150,6 +150,24 @@ function SectionCreerDevis({ quoteToLoad, onClearQuote }: SectionCreerDevisProps
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  const [catalogue, setCatalogue] = useState<any[]>([]);
+  const [activeSuggestRow, setActiveSuggestRow] = useState<number | null>(null);
+  const [activeSuggestField, setActiveSuggestField] = useState<'ref' | 'desc' | null>(null);
+
+  useEffect(() => {
+    fetch('/api/products').then(r => r.json()).then(d => {
+      setCatalogue(Array.isArray(d) ? d : d.data || []);
+    }).catch(() => {});
+  }, []);
+
+  const getSuggestions = (text: string, field: 'ref' | 'desc') => {
+    if (!text || text.length < 1) return [];
+    return catalogue.filter(p => {
+      const target = field === 'ref' ? p.reference : p.name;
+      return target?.toLowerCase().includes(text.toLowerCase());
+    }).slice(0, 8);
+  };
+
   // Charger la demande de devis si elle est sélectionnée
   useEffect(() => {
     if (quoteToLoad) {
@@ -306,25 +324,71 @@ function SectionCreerDevis({ quoteToLoad, onClearQuote }: SectionCreerDevisProps
                 const discounted = lineTotal - lineTotal * (it.discount / 100);
                 return (
                   <tr key={i} className="border-b border-slate-800/50">
-                    <td className="px-2 py-2">
-                      <input type="text" value={it.designation} onChange={e => updateLine(i, 'designation', e.target.value)}
+                    <td className="px-2 py-2 relative">
+                      <input type="text" value={it.designation} 
+                        onChange={e => {
+                          updateLine(i, 'designation', e.target.value);
+                          setActiveSuggestRow(i);
+                          setActiveSuggestField('desc');
+                        }}
+                        onFocus={() => { setActiveSuggestRow(i); setActiveSuggestField('desc'); }}
+                        onBlur={() => setTimeout(() => { setActiveSuggestRow(null); setActiveSuggestField(null); }, 200)}
                         className="w-full bg-white text-black font-semibold text-xs px-2 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:border-red-500 uppercase min-w-[150px]" placeholder="DÉSIGNATION" />
+                      {activeSuggestRow === i && activeSuggestField === 'desc' && getSuggestions(it.designation, 'desc').length > 0 && (
+                        <div className="absolute left-0 z-50 mt-1 min-w-[220px] bg-slate-950 border border-slate-700 rounded-xl max-h-44 overflow-y-auto shadow-2xl">
+                          {getSuggestions(it.designation, 'desc').map((p: any) => (
+                            <button key={p.id} type="button"
+                              onClick={() => {
+                                updateLine(i, 'designation', p.name || '');
+                                updateLine(i, 'reference', p.reference || '');
+                                if (p.price) updateLine(i, 'puHT', p.price);
+                              }}
+                              className="w-full text-left px-3 py-2 hover:bg-slate-800 text-xs font-semibold text-slate-200 border-b border-slate-900 last:border-0 flex items-center justify-between gap-2">
+                              <span className="text-white truncate max-w-[140px]">{p.name}</span>
+                              <span className="text-red-400 font-mono text-[9px] shrink-0">{p.reference}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </td>
-                    <td className="px-2 py-2">
-                      <input type="text" value={it.reference} onChange={e => updateLine(i, 'reference', e.target.value)}
+                    <td className="px-2 py-2 relative">
+                      <input type="text" value={it.reference}
+                        onChange={e => {
+                          updateLine(i, 'reference', e.target.value);
+                          setActiveSuggestRow(i);
+                          setActiveSuggestField('ref');
+                        }}
+                        onFocus={() => { setActiveSuggestRow(i); setActiveSuggestField('ref'); }}
+                        onBlur={() => setTimeout(() => { setActiveSuggestRow(null); setActiveSuggestField(null); }, 200)}
                         className="w-full bg-white text-black font-semibold text-xs px-2 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:border-red-500 uppercase min-w-[100px]" placeholder="RÉF." />
+                      {activeSuggestRow === i && activeSuggestField === 'ref' && getSuggestions(it.reference, 'ref').length > 0 && (
+                        <div className="absolute left-0 z-50 mt-1 min-w-[220px] bg-slate-950 border border-slate-700 rounded-xl max-h-44 overflow-y-auto shadow-2xl">
+                          {getSuggestions(it.reference, 'ref').map((p: any) => (
+                            <button key={p.id} type="button"
+                              onClick={() => {
+                                updateLine(i, 'reference', p.reference || '');
+                                updateLine(i, 'designation', p.name || '');
+                                if (p.price) updateLine(i, 'puHT', p.price);
+                              }}
+                              className="w-full text-left px-3 py-2 hover:bg-slate-800 text-xs font-semibold text-slate-200 border-b border-slate-900 last:border-0 flex items-center justify-between gap-2">
+                              <span className="text-red-400 font-mono font-bold shrink-0">{p.reference}</span>
+                              <span className="text-slate-400 text-[10px] truncate">{p.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </td>
                     <td className="px-2 py-2">
                       <input type="number" value={it.qty} min={1} onChange={e => updateLine(i, 'qty', parseFloat(e.target.value) || 1)}
                         className="w-16 bg-white text-black font-bold text-xs px-2 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:border-red-500 text-center" />
                     </td>
                     <td className="px-2 py-2">
-                      <input type="number" value={it.puHT} min={0} step={0.001} onChange={e => updateLine(i, 'puHT', parseFloat(e.target.value) || 0)}
-                        className="w-24 bg-white text-black font-bold text-xs px-2 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:border-red-500 text-right" placeholder="0.000" />
+                      <input type="number" value={it.puHT || ''} min={0} step={0.001} onChange={e => updateLine(i, 'puHT', parseFloat(e.target.value) || 0)}
+                        className="w-24 bg-white text-black font-bold text-xs px-2 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:border-red-500 text-right" placeholder="" />
                     </td>
                     <td className="px-2 py-2">
-                      <input type="number" value={it.discount} min={0} max={100} step={1} onChange={e => updateLine(i, 'discount', parseFloat(e.target.value) || 0)}
-                        className="w-16 bg-white text-black font-bold text-xs px-2 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:border-red-500 text-center" />
+                      <input type="number" value={it.discount || ''} min={0} max={100} step={1} onChange={e => updateLine(i, 'discount', parseFloat(e.target.value) || 0)}
+                        className="w-16 bg-white text-black font-bold text-xs px-2 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:border-red-500 text-center" placeholder="" />
                     </td>
                     <td className="px-2 py-2 text-right font-black text-cyan-400">{discounted.toFixed(3)} TND</td>
                     <td className="px-2 py-2 text-center">
@@ -1618,8 +1682,11 @@ function SectionDevisGeneres() {
     doc.setFontSize(10);
     doc.text("PROPOSITION COMMERCIALE / DEVIS", 20, 31);
     
+    const localDevisSorted = [...devisList].sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+    const devisSeqIdx = localDevisSorted.findIndex(x => x.id === devis.id);
+    const devisSeqNum = devisSeqIdx !== -1 ? String(devisSeqIdx + 1).padStart(6, '0') : devis.id.slice(-6).toUpperCase();
     doc.setTextColor(0, 0, 0);
-    doc.text(`Devis : #DEV-${devis.id.slice(-6).toUpperCase()}`, 140, 20);
+    doc.text(`Devis : #DEV-${devisSeqNum}`, 140, 20);
     doc.text(`Date : ${new Date(devis.createdAt).toLocaleDateString('fr-FR')}`, 140, 26);
 
     autoTable(doc, {
@@ -1664,7 +1731,7 @@ function SectionDevisGeneres() {
       styles: { halign: "right", fontStyle: "bold" },
     });
 
-    doc.save(`Devis_AUTOP_${devis.id.slice(-6).toUpperCase()}.pdf`);
+    doc.save(`Devis_AUTOP_DEV-${devisSeqNum}.pdf`);
   };
 
   const handleDownloadExcel = (devis: any) => {
@@ -1681,11 +1748,23 @@ function SectionDevisGeneres() {
     document.body.removeChild(link);
   };
 
-  const filtered = devisList.filter(d =>
-    d.clientEmail?.toLowerCase().includes(search.toLowerCase()) ||
-    d.vehicleBrand?.toLowerCase().includes(search.toLowerCase()) ||
-    d.vehicleModel?.toLowerCase().includes(search.toLowerCase())
-  );
+  const devisSorted = [...devisList].sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+  const getSeqNum = (d: any) => {
+    const idx = devisSorted.findIndex(x => x.id === d.id);
+    return idx !== -1 ? String(idx + 1).padStart(6, '0') : d.id.slice(-6).toUpperCase();
+  };
+
+  const filtered = devisList.filter(d => {
+    const seq = getSeqNum(d);
+    const s = search.toLowerCase();
+    return (
+      `dev-${seq}`.includes(s) ||
+      seq.includes(s) ||
+      d.clientEmail?.toLowerCase().includes(s) ||
+      d.vehicleBrand?.toLowerCase().includes(s) ||
+      d.vehicleModel?.toLowerCase().includes(s)
+    );
+  });
 
   return (
     <div>
@@ -1709,11 +1788,13 @@ function SectionDevisGeneres() {
         <div className="text-center py-10 text-slate-600 font-bold uppercase">AUCUN DEVIS TROUVÉ</div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
-          {filtered.map(d => (
+          {filtered.map(d => {
+            const seqNum = getSeqNum(d);
+            return (
             <div key={d.id} className={cardCls}>
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 pb-4 border-b border-slate-800/40">
                 <div>
-                  <span className="font-mono text-amber-400 font-black text-sm uppercase">#DEV-{d.id.slice(-6).toUpperCase()}</span>
+                  <span className="font-mono text-amber-400 font-black text-sm uppercase">#DEV-{seqNum}</span>
                   <h4 className="font-black text-white uppercase text-sm mt-0.5">{d.clientEmail}</h4>
                   <p className="text-[10px] text-slate-400 mt-0.5 font-sans">VÉHICULE: {d.vehicleBrand?.toUpperCase()} {d.vehicleModel?.toUpperCase()} · CRÉÉ LE: {new Date(d.createdAt).toLocaleDateString('fr-FR')}</p>
                 </div>
@@ -1743,7 +1824,8 @@ function SectionDevisGeneres() {
                 </button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

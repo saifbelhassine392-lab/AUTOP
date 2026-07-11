@@ -6,7 +6,7 @@ import { useCart } from "@/contexts/CartContext"
 import Link from "next/link"
 import { 
   Download, CheckCircle, MessageCircle, FileText, 
-  Plus, FileSpreadsheet, ClipboardList, Package, Receipt, X
+  Plus, FileSpreadsheet, ClipboardList, Package, Receipt, X, Search
 } from 'lucide-react'
 
 export default function MesDevisPage() {
@@ -15,6 +15,7 @@ export default function MesDevisPage() {
   const [devis, setDevis] = useState<any[]>([])
   const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [clientSearch, setClientSearch] = useState('')
 
   // États pour le Bon de Commande
   const [orderModalDevis, setOrderModalDevis] = useState<any | null>(null)
@@ -244,7 +245,11 @@ export default function MesDevisPage() {
     
     const doc = new jsPDF();
     const dateStr = d.date;
-    const ref = `DEVIS-${d.id.slice(-6).toUpperCase()}`;
+
+    const devisListSorted = [...devis].sort((a,b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+    const seqIndex = devisListSorted.findIndex(item => item.id === d.id);
+    const seqNumber = seqIndex !== -1 ? String(seqIndex + 1).padStart(6, '0') : d.id.slice(-6).toUpperCase();
+    const ref = `DEV-${seqNumber}`;
 
     doc.setFillColor(220, 38, 38);
     doc.rect(0, 0, 210, 40, "F");
@@ -484,124 +489,172 @@ export default function MesDevisPage() {
           {/* Dashboard Right Content */}
           <div className="lg:col-span-3 space-y-6">
             
+            {/* Search Bar */}
+            <div className="bg-slate-900/40 border border-slate-800/60 rounded-3xl p-5 backdrop-blur-md shadow-xl flex gap-2 items-center">
+              <Search className="w-4 h-4 text-slate-400 shrink-0 ml-1" />
+              <input 
+                type="text" 
+                placeholder="RECHERCHER DIRECTEMENT PAR N° DEVIS, N° COMMANDE, MARQUE, OU MOT-CLÉ..." 
+                className="bg-transparent text-sm text-white font-semibold uppercase placeholder:text-slate-500 placeholder:normal-case placeholder:font-normal focus:outline-none w-full"
+                value={clientSearch}
+                onChange={e => setClientSearch(e.target.value)}
+              />
+              {clientSearch && (
+                <button onClick={() => setClientSearch('')} className="text-slate-500 hover:text-slate-300 text-xs font-bold font-mono px-2">✕</button>
+              )}
+            </div>
+
             {/* TAB DEVIS */}
-            {activeTab === 'devis' && (
-              <div className="space-y-6">
-                {devis.length === 0 && (
-                  <p className="text-slate-500 py-10 text-center uppercase tracking-widest text-xs">Aucune demande de devis.</p>
-                )}
+            {activeTab === 'devis' && (() => {
+              const devisListSorted = [...devis].sort((a,b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+              const filteredDevis = devis.filter(d => {
+                const seqIndex = devisListSorted.findIndex(item => item.id === d.id);
+                const seqNumber = seqIndex !== -1 ? String(seqIndex + 1).padStart(6, '0') : '';
+                const searchLower = clientSearch.toLowerCase();
+                return (
+                  `dev-${seqNumber}`.includes(searchLower) ||
+                  seqNumber.includes(searchLower) ||
+                  d.id.toLowerCase().includes(searchLower) ||
+                  d.brand?.toLowerCase().includes(searchLower) ||
+                  d.model?.toLowerCase().includes(searchLower) ||
+                  d.vin?.toLowerCase().includes(searchLower) ||
+                  d.status?.toLowerCase().includes(searchLower)
+                );
+              });
 
-                {devis.map((d) => (
-                  <div key={d.id} className="bg-slate-900/40 border border-slate-800/60 rounded-3xl p-6 backdrop-blur-md hover:border-slate-700/60 transition duration-300 shadow-xl">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 pb-4 border-b border-slate-800/40">
-                      <div>
-                        <h3 className="font-black text-red-500 font-mono text-sm tracking-wider">DEVIS #{d.id.slice(-6).toUpperCase()}</h3>
-                        <p className="text-xs text-slate-400 mt-1 uppercase">
-                          Véhicule : <strong className="text-slate-200">{d.brand} {d.model}</strong> 
-                          {d.vin && <> (VIN: <code className="bg-slate-950 px-1.5 py-0.5 rounded text-[10px] text-red-400">{d.vin}</code>)</>}
-                        </p>
-                        <p className="text-[10px] text-slate-500 mt-1 uppercase">Soumis le : {d.date}</p>
-                      </div>
-                      <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-                        <button
-                          onClick={() => downloadQuotePDF(d)}
-                          className="px-4 py-2 bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white border border-red-500/20 rounded-xl text-[10px] font-black tracking-widest transition flex items-center gap-1.5 uppercase"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          VOIR DEVIS
-                        </button>
-                        <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                          d.isTreated 
-                            ? "bg-green-500/10 text-green-400 border border-green-500/20" 
-                            : d.status === "Rejeté" 
-                            ? "bg-red-500/10 text-red-400 border border-red-500/20"
-                            : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                        }`}>
-                          {d.status}
-                        </span>
-                      </div>
-                    </div>
+              return (
+                <div className="space-y-6">
+                  {filteredDevis.length === 0 && (
+                    <p className="text-slate-500 py-10 text-center uppercase tracking-widest text-xs">Aucune demande de devis trouvée.</p>
+                  )}
 
-                    <div className="space-y-2.5 bg-slate-950/40 p-4 rounded-2xl border border-slate-800/60">
-                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Pièces demandées :</span>
-                      {d.items?.map((p: any) => (
-                        <div key={p.id} className="flex justify-between items-center text-sm border-b border-slate-800/40 pb-2 last:border-0 last:pb-0">
-                          <span className="text-slate-350 uppercase text-xs">{p.name}</span>
-                          <span className="font-bold text-slate-400 text-xs font-mono">x{p.quantity}</span>
+                  {filteredDevis.map((d) => {
+                    const seqIndex = devisListSorted.findIndex(item => item.id === d.id);
+                    const seqNumber = seqIndex !== -1 ? String(seqIndex + 1).padStart(6, '0') : d.id.slice(-6).toUpperCase();
+                    return (
+                      <div key={d.id} className="bg-slate-900/40 border border-slate-800/60 rounded-3xl p-6 backdrop-blur-md hover:border-slate-700/60 transition duration-300 shadow-xl">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 pb-4 border-b border-slate-800/40">
+                          <div>
+                            <h3 className="font-black text-red-500 font-mono text-sm tracking-wider">DEVIS #DEV-{seqNumber}</h3>
+                            <p className="text-xs text-slate-400 mt-1 uppercase">
+                              Véhicule : <strong className="text-slate-200">{d.brand} {d.model}</strong> 
+                              {d.vin && <> (VIN: <code className="bg-slate-950 px-1.5 py-0.5 rounded text-[10px] text-red-400">{d.vin}</code>)</>}
+                            </p>
+                            <p className="text-[10px] text-slate-500 mt-1 uppercase">Soumis le : {d.date}</p>
+                          </div>
+                   <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                            <button
+                              onClick={() => downloadQuotePDF(d)}
+                              className="px-4 py-2 bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white border border-red-500/20 rounded-xl text-[10px] font-black tracking-widest transition flex items-center gap-1.5 uppercase"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              VOIR DEVIS
+                            </button>
+                            <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                              d.isTreated 
+                                ? "bg-green-500/10 text-green-400 border border-green-500/20" 
+                                : d.status === "Rejeté" 
+                                ? "bg-red-500/10 text-red-400 border border-red-500/20"
+                                : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                            }`}>
+                              {d.status}
+                            </span>
+                          </div>
                         </div>
-                      ))}
-                    </div>
 
-                    {d.isTreated && d.status === 'Traité' && (
-                      <div className="bg-green-600/5 border border-green-500/10 rounded-2xl p-5 mt-5">
-                        <h4 className="text-green-400 font-black text-xs uppercase tracking-wider mb-2">Proposition Commerciale</h4>
-                        <p className="text-xs text-slate-300 mb-4 uppercase">{d.response || 'Votre devis est traité par notre comptoir.'}</p>
-                        
-                        <button
-                          onClick={() => {
-                            setOrderModalDevis(d);
-                            setEditableItems(d.items.map((it: any) => ({ ...it, discount: it.discount || 0 })));
-                          }}
-                          className="w-full px-6 py-3.5 bg-green-600 hover:bg-green-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition shadow-lg shadow-green-600/20 flex items-center justify-center gap-2"
-                        >
-                          🛒 Valider & Générer Bon de Commande
-                        </button>
+                        <div className="space-y-2.5 bg-slate-950/40 p-4 rounded-2xl border border-slate-800/60">
+                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Pièces demandées :</span>
+                          {d.items?.map((p: any) => (
+                            <div key={p.id} className="flex justify-between items-center text-sm border-b border-slate-800/40 pb-2 last:border-0 last:pb-0">
+                              <span className="text-slate-350 uppercase text-xs">{p.name}</span>
+                              <span className="font-bold text-slate-400 text-xs font-mono">x{p.quantity}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {d.isTreated && d.status === 'Traité' && (
+                          <div className="bg-green-600/5 border border-green-500/10 rounded-2xl p-5 mt-5">
+                            <h4 className="text-green-400 font-black text-xs uppercase tracking-wider mb-2">Proposition Commerciale</h4>
+                            <p className="text-xs text-slate-300 mb-4 uppercase">{d.response || 'Votre devis est traité par notre comptoir.'}</p>
+                            
+                            <button
+                              onClick={() => {
+                                setOrderModalDevis(d);
+                                setEditableItems(d.items.map((it: any) => ({ ...it, discount: it.discount || 0 })));
+                              }}
+                              className="w-full px-6 py-3.5 bg-green-600 hover:bg-green-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition shadow-lg shadow-green-600/20 flex items-center justify-center gap-2"
+                            >
+                              🛒 Valider & Générer Bon de Commande
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+                    );
+                  })}
+                </div>
+              );
+            })()}
 
             {/* TAB COMMANDES */}
-            {activeTab === 'commandes' && (
-              <div className="space-y-6">
-                {orders.length === 0 && (
-                  <p className="text-slate-500 py-10 text-center uppercase tracking-widest text-xs">Aucune commande en cours.</p>
-                )}
+            {activeTab === 'commandes' && (() => {
+              const filteredOrders = orders.filter(o => {
+                const searchLower = clientSearch.toLowerCase();
+                return (
+                  o.orderNumber?.toLowerCase().includes(searchLower) ||
+                  o.status?.toLowerCase().includes(searchLower) ||
+                  o.customerNote?.toLowerCase().includes(searchLower) ||
+                  o.items?.some((item: any) => item.productName?.toLowerCase().includes(searchLower))
+                );
+              });
+              return (
+                <div className="space-y-6">
+                  {filteredOrders.length === 0 && (
+                    <p className="text-slate-500 py-10 text-center uppercase tracking-widest text-xs">Aucune commande trouvée.</p>
+                  )}
 
-                {orders.map((o) => (
-                  <div key={o.id} className="bg-slate-900/40 border border-slate-800/60 rounded-3xl p-6 backdrop-blur-md hover:border-slate-700/60 transition duration-300 shadow-xl">
-                    <div className="flex justify-between items-start mb-4 pb-4 border-b border-slate-800/40">
-                      <div>
-                        <h3 className="font-black text-green-400 font-mono text-sm tracking-wider">COMMANDE #{o.orderNumber}</h3>
-                        <p className="text-xs text-slate-400 mt-1 uppercase">
-                          Créée le : <strong className="text-slate-200">{new Date(o.createdAt).toLocaleDateString('fr-FR')}</strong>
-                        </p>
-                        <p className="text-[10px] text-slate-500 mt-1 uppercase">Montant Total TTC: <strong>{o.total.toFixed(3)} TND</strong></p>
-                      </div>
-                      <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
-                        o.status === 'DELIVERED' 
-                          ? "bg-green-500/10 text-green-400 border-green-500/20"
-                          : o.status === 'SHIPPED'
-                          ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                          : o.status === 'CANCELLED'
-                          ? "bg-red-500/10 text-red-400 border-red-500/20"
-                          : "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                      }`}>
-                        {getOrderStatusLabel(o.status)}
-                      </span>
-                    </div>
-
-                    {/* Statut Livraison / Notes de l'admin */}
-                    <div className="mb-4 text-xs text-slate-355 bg-slate-950/40 p-4 rounded-2xl border border-slate-800/60">
-                      <span className="font-black text-slate-500 block mb-1 uppercase tracking-widest text-[9px]">Suivi de livraison (Admin) :</span>
-                      <p className="uppercase">{o.customerNote || "En attente de prise en charge par l'administrateur."}</p>
-                    </div>
-
-                    <div className="space-y-2.5 bg-slate-950/40 p-4 rounded-2xl border border-slate-800/60">
-                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Articles commandés :</span>
-                      {o.items?.map((item: any) => (
-                        <div key={item.id} className="flex justify-between items-center text-sm border-b border-slate-800/40 pb-2 last:border-0 last:pb-0">
-                          <span className="text-slate-300 uppercase text-xs">{item.productName}</span>
-                          <span className="font-bold text-slate-400 text-xs font-mono">x{item.quantity} | {item.price.toFixed(3)} TND</span>
+                  {filteredOrders.map((o) => (
+                    <div key={o.id} className="bg-slate-900/40 border border-slate-800/60 rounded-3xl p-6 backdrop-blur-md hover:border-slate-700/60 transition duration-300 shadow-xl">
+                      <div className="flex justify-between items-start mb-4 pb-4 border-b border-slate-800/40">
+                        <div>
+                          <h3 className="font-black text-green-400 font-mono text-sm tracking-wider">COMMANDE #{o.orderNumber}</h3>
+                          <p className="text-xs text-slate-400 mt-1 uppercase">
+                            Créée le : <strong className="text-slate-200">{new Date(o.createdAt).toLocaleDateString('fr-FR')}</strong>
+                          </p>
+                          <p className="text-[10px] text-slate-500 mt-1 uppercase">Montant Total TTC: <strong>{o.total.toFixed(3)} TND</strong></p>
                         </div>
-                      ))}
+                        <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
+                          o.status === 'DELIVERED' 
+                            ? "bg-green-500/10 text-green-400 border-green-500/20"
+                            : o.status === 'SHIPPED'
+                            ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                            : o.status === 'CANCELLED'
+                            ? "bg-red-500/10 text-red-400 border-red-500/20"
+                            : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                        }`}>
+                          {getOrderStatusLabel(o.status)}
+                        </span>
+                      </div>
+
+                      {/* Statut Livraison / Notes de l'admin */}
+                      <div className="mb-4 text-xs text-slate-355 bg-slate-950/40 p-4 rounded-2xl border border-slate-800/60">
+                        <span className="font-black text-slate-500 block mb-1 uppercase tracking-widest text-[9px]">Suivi de livraison (Admin) :</span>
+                        <p className="uppercase">{o.customerNote || "En attente de prise en charge par l'administrateur."}</p>
+                      </div>
+
+                      <div className="space-y-2.5 bg-slate-950/40 p-4 rounded-2xl border border-slate-800/60">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Articles commandés :</span>
+                        {o.items?.map((item: any) => (
+                          <div key={item.id} className="flex justify-between items-center text-sm border-b border-slate-800/40 pb-2 last:border-0 last:pb-0">
+                            <span className="text-slate-300 uppercase text-xs">{item.productName}</span>
+                            <span className="font-bold text-slate-400 text-xs font-mono">x{item.quantity} | {item.price.toFixed(3)} TND</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              );
+            })()}
 
             {/* TAB FACTURES */}
             {activeTab === 'factures' && (

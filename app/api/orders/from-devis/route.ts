@@ -48,20 +48,20 @@ export async function POST(req: NextRequest) {
         const itemDiscount = parseFloat(item.discount) || 0;
         const itemTotal = itemPrice * itemQuantity * (1 - itemDiscount / 100);
         return {
-          productId: item.productId || '',
+          productId: item.productId || null,
           productName: item.name,
-          sku: 'DEVIS-PU',
+          sku: item.reference || 'N/A',
           price: itemPrice,
           quantity: itemQuantity,
           total: itemTotal
         };
       });
     } else {
-      subtotal = devis.totalPrice || devis.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-      orderItemsData = devis.items.map(item => ({
-        productId: item.productId || '',
+      subtotal = devis.totalPrice || devis.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+      orderItemsData = devis.items.map((item: any) => ({
+        productId: item.productId || null,
         productName: item.name,
-        sku: 'DEVIS-PU',
+        sku: (item as any).reference || 'N/A',
         price: item.price,
         quantity: item.quantity,
         total: item.price * item.quantity

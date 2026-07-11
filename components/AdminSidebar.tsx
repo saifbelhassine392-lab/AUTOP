@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import { useApp } from '@/lib/context';
 import { useSession, signOut } from 'next-auth/react';
 import Image from 'next/image';
@@ -78,6 +79,50 @@ export default function AdminSidebar() {
   const { data: session } = useSession();
   const user = session?.user as any;
 
+  const [counts, setCounts] = useState({ reception: 0, traitement: 0, devisGen: 0, bons: 0 });
+
+  const fetchBadgeCounts = () => {
+    fetch('/api/quotes')
+      .then(r => r.json())
+      .then(d => {
+        const qList = Array.isArray(d) ? d : d.data || [];
+        const reception = qList.filter((q: any) => q.status === 'pending' || q.status === 'En attente').length;
+        const traitement = qList.filter((q: any) => q.status === 'in_progress' || q.status === 'En traitement').length;
+        setCounts(prev => ({ ...prev, reception, traitement }));
+      })
+      .catch(() => {});
+
+    fetch('/api/devis')
+      .then(r => r.json())
+      .then(d => {
+        const dList = Array.isArray(d) ? d : d.data || [];
+        setCounts(prev => ({ ...prev, devisGen: dList.length }));
+      })
+      .catch(() => {});
+
+    fetch('/api/orders')
+      .then(r => r.json())
+      .then(d => {
+        const oList = d.data || [];
+        setCounts(prev => ({ ...prev, bons: oList.length }));
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    fetchBadgeCounts();
+    const interval = setInterval(fetchBadgeCounts, 15000); // refresh every 15s
+    return () => clearInterval(interval);
+  }, []);
+
+  const getBadgeValue = (id: string) => {
+    if (id === 'reception') return counts.reception;
+    if (id === 'traitement') return counts.traitement;
+    if (id === 'devis-gen') return counts.devisGen;
+    if (id === 'bons') return counts.bons;
+    return undefined;
+  };
+
   return (
     <aside className="bg-slate-950 border-r border-slate-800 w-[260px] hidden md:flex flex-col overflow-hidden h-screen sticky top-0">
       {/* Logo Header */}
@@ -109,6 +154,7 @@ export default function AdminSidebar() {
             {section.items.map((item) => {
               const Icon = item.icon;
               const isActive = adminSection === item.id;
+              const badgeVal = getBadgeValue(item.id);
               return (
                 <button
                   key={item.id}
@@ -121,9 +167,9 @@ export default function AdminSidebar() {
                 >
                   <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-white'}`} />
                   <span className="flex-1 text-left">{item.label}</span>
-                  {item.badge && (
+                  {badgeVal !== undefined && badgeVal > 0 && (
                     <span className={`${item.badgeColor} text-white text-[9px] px-1.5 py-0.5 rounded-full font-black min-w-[18px] text-center`}>
-                      {item.badge}
+                      {badgeVal}
                     </span>
                   )}
                   {isActive && <ChevronRight className="w-3 h-3 ml-auto flex-shrink-0" />}
