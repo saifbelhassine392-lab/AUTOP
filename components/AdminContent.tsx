@@ -805,9 +805,8 @@ function SectionConsultationFournisseur() {
       [suppId]: {
         ...(prev[suppId] || {}),
         [itemIdx]: {
-          price: 0,
-          discount: 0,
-          ...(prev[suppId]?.[itemIdx] || {}),
+          price: prev[suppId]?.[itemIdx]?.price ?? 0,
+          discount: prev[suppId]?.[itemIdx]?.discount ?? 0,
           [field]: val
         }
       }
