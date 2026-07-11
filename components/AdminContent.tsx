@@ -1352,51 +1352,74 @@ function SectionGestionArticles() {
     }
   };
 
-  // Parsing CSV
+  // Parsing CSV / XLSX via SheetJS
   const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setCsvFile(file);
 
     const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      const lines = text.split('\n');
-      if (lines.length <= 1) return;
+    reader.onload = async (event) => {
+      try {
+        const XLSX = await import('xlsx');
+        const data = event.target?.result;
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        // Convert to array of arrays (keep raw values)
+        const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+        if (rows.length < 2) { setCsvPreview([]); return; }
 
-      const headerLine = lines[0].split(/[;,]/).map(h => h.trim().toUpperCase().replace(/["]/g, ''));
-      
-      const refIdx = headerLine.findIndex(h => h.includes('REFERENCE') || h.includes('REF'));
-      const desIdx = headerLine.findIndex(h => h.includes('DESIGNATION') || h.includes('NOM'));
-      const qteIdx = headerLine.findIndex(h => h.includes('QTE') || h.includes('STOCK') || h.includes('QUANT'));
-      const mrqIdx = headerLine.findIndex(h => h.includes('MARQUE') || h.includes('BRAND'));
-      const vehIdx = headerLine.findIndex(h => h.includes('VEHICULE') || h.includes('COMPATIBILITE'));
-      const coutIdx = headerLine.findIndex(h => h.includes('COUT') || h.includes('REVIENT') || h.includes('ACHAT'));
-      const venteIdx = headerLine.findIndex(h => h.includes('VENTE') || h.includes('PRIX'));
+        // Normalize header: strip accents, uppercase, trim whitespace
+        const normalize = (s: any) =>
+          String(s).toUpperCase().trim()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/\s+/g, ' ');
 
-      const parsed: any[] = [];
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-        const row = line.split(/[;,]/).map(c => c.trim().replace(/["]/g, ''));
-        
-        const reference = refIdx !== -1 && row[refIdx] ? row[refIdx] : '';
-        const designation = desIdx !== -1 && row[desIdx] ? row[desIdx] : '';
-        if (!reference || !designation) continue;
+        const headerRaw: string[] = (rows[0] as any[]).map((h: any) => normalize(h));
 
-        parsed.push({
-          reference,
-          designation,
-          stock: qteIdx !== -1 ? parseInt(row[qteIdx]) || 0 : 0,
-          brand: mrqIdx !== -1 ? row[mrqIdx] : '',
-          vehicleCompat: vehIdx !== -1 ? row[vehIdx] : '',
-          costPrice: coutIdx !== -1 ? parseFloat(row[coutIdx]) || 0 : 0,
-          sellingPrice: venteIdx !== -1 ? parseFloat(row[venteIdx]) || 0 : 0
-        });
+        const findCol = (...keys: string[]) =>
+          headerRaw.findIndex(h => keys.some(k => h.includes(k)));
+
+        const refIdx   = findCol('REFERENCE', 'REF');
+        const desIdx   = findCol('DESIGNATION', 'LIBELLE', 'NOM', 'ARTICLE');
+        const qteIdx   = findCol('QTE', 'QUANT', 'STOCK');
+        const mrqIdx   = findCol('MARQUE', 'BRAND');
+        const vehIdx   = findCol('VEHICULE', 'CONCERNEE', 'COMPAT');
+        const coutIdx  = findCol('COUT', 'REVIENT', 'ACHAT');
+        const venteIdx = findCol('PRIX VENTE', 'VENTE', 'PV');
+
+        const parseNum = (v: any) => {
+          const n = parseFloat(String(v).replace(',', '.').replace(/\s/g, '').replace(/[^\d.-]/g, ''));
+          return isNaN(n) ? 0 : n;
+        };
+
+        const parsed: any[] = [];
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i] as any[];
+          const reference   = refIdx !== -1 ? String(row[refIdx]  || '').trim() : '';
+          const designation = desIdx !== -1 ? String(row[desIdx]  || '').trim() : '';
+          if (!reference) continue;
+
+          parsed.push({
+            reference,
+            designation: designation || 'ARTICLE ' + reference,
+            stock:         qteIdx   !== -1 ? parseInt(String(row[qteIdx] || '0')) || 0 : 0,
+            brand:         mrqIdx   !== -1 ? String(row[mrqIdx]  || '').trim() : '',
+            vehicleCompat: vehIdx   !== -1 ? String(row[vehIdx]  || '').trim() : '',
+            costPrice:     coutIdx  !== -1 ? parseNum(row[coutIdx])  : 0,
+            sellingPrice:  venteIdx !== -1 ? parseNum(row[venteIdx]) : 0,
+          });
+        }
+        setCsvPreview(parsed);
+      } catch (err) {
+        console.error('Erreur parsing fichier:', err);
+        alert('Erreur lors de la lecture du fichier. Vérifiez le format (xlsx ou csv).');
+        setCsvFile(null);
+        setCsvPreview([]);
       }
-      setCsvPreview(parsed);
     };
-    reader.readAsText(file);
+    reader.readAsArrayBuffer(file);
   };
 
   const handleLaunchImport = async () => {
@@ -1502,11 +1525,11 @@ function SectionGestionArticles() {
 
               <div className="space-y-4">
                 <div className="border-2 border-dashed border-slate-800 rounded-2xl p-6 text-center hover:border-cyan-500/50 transition">
-                  <input type="file" accept=".csv" onChange={handleCsvUpload} className="hidden" id="csv-file-upload" />
+                  <input type="file" accept=".xlsx,.xls,.csv" onChange={handleCsvUpload} className="hidden" id="csv-file-upload" />
                   <label htmlFor="csv-file-upload" className="cursor-pointer block">
                     <Package className="w-8 h-8 text-slate-500 mx-auto mb-2 opacity-50" />
-                    <div className="text-xs font-black text-slate-300 uppercase">SÉLECTIONNER UN FICHIER CSV</div>
-                    <div className="text-[9px] text-slate-555 mt-1 uppercase">CLIQUEZ POUR CHOISIR UN FICHIER DE VOTRE ETAT DES PIÈCES</div>
+                    <div className="text-xs font-black text-slate-300 uppercase">SÉLECTIONNER UN FICHIER EXCEL OU CSV</div>
+                    <div className="text-[9px] text-slate-555 mt-1 uppercase">FORMATS ACCEPTÉS : .XLSX, .XLS, .CSV</div>
                   </label>
                 </div>
 
