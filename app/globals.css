@@ -3,11 +3,13 @@
 @tailwind utilities;
 
 @layer base {
-  html {
-    scroll-behavior: smooth;
+  * {
+    @apply border-slate-800;
   }
-  
   body {
-    @apply bg-white text-gray-900 antialiased;
+    @apply bg-[#0a0e1a] text-slate-100 antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight;
   }
 }

@@ -1,25 +1,24 @@
-﻿import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import "./globals.css"
-import Providers from "./Providers"
-
-const inter = Inter({ subsets: ["latin"] })
+﻿import type { Metadata } from "next";
+import Providers from "./Providers";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AUTOP - Pièces Auto",
-  description: "Votre spécialiste pièces auto",
-}
+  title: "AUTOP Tunisie — Gestion de Stock & Devis",
+  description: "Plateforme intégrée : Espace Client, Catalogue et Administration",
+};
 
 export default function RootLayout({
   children,
-}: {
-  children: React.ReactNode
-}) {
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="fr">
-      <body className={inter.className}>
-        <Providers>{children}</Providers>
+    <html lang="fr" className="dark">
+      <body className="bg-[#0a0e1a] text-slate-100 antialiased">
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
-  )
+  );
 }

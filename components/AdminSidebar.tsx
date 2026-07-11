@@ -1,107 +1,149 @@
-﻿"use client";
+"use client";
 
 import { useApp } from '@/lib/context';
-import { Search } from 'lucide-react';
+import { useSession, signOut } from 'next-auth/react';
+import Image from 'next/image';
+import {
+  Inbox, Clock, FileText, ShoppingBag,
+  FilePlus, FileDown, Send,
+  Building2, UserPlus, List, ClipboardList,
+  Package, PlusCircle, Edit, BarChart2, TrendingUp,
+  LogOut, ChevronRight
+} from 'lucide-react';
 
-// Type pour les items du sidebar
 type SidebarItem = {
   id: string;
   label: string;
+  icon: React.ElementType;
   badge?: number;
   badgeColor?: string;
-  isButton?: boolean;
 };
 
 type SidebarSection = {
   title: string;
-  color?: string;
+  color: string;
   items: SidebarItem[];
 };
 
 const sections: SidebarSection[] = [
   {
-    title: "Demandes Clients",
+    title: "DEMANDES CLIENTS",
+    color: "text-red-400",
     items: [
-      { id: 'reception', label: 'Reception Demandes', badge: 3, badgeColor: 'bg-accent-red' },
-      { id: 'traitement', label: 'En Traitement', badge: 5, badgeColor: 'bg-accent-blue' },
-      { id: 'devis-gen', label: 'Devis Genere', badge: 12, badgeColor: 'bg-accent-green' },
-      { id: 'bons', label: 'Bons de Commande', badge: 8, badgeColor: 'bg-accent-purple' },
+      { id: 'reception', label: 'RÉCEPTION DEMANDES', icon: Inbox, badge: 3, badgeColor: 'bg-red-500' },
+      { id: 'traitement', label: 'EN TRAITEMENT', icon: Clock, badge: 5, badgeColor: 'bg-blue-500' },
+      { id: 'devis-gen', label: 'DEVIS GÉNÉRÉS', icon: FileText, badge: 12, badgeColor: 'bg-green-500' },
+      { id: 'bons', label: 'BONS DE COMMANDE', icon: ShoppingBag, badge: 8, badgeColor: 'bg-purple-500' },
     ]
   },
   {
-    title: "Gestion Devis",
+    title: "GESTION DEVIS",
+    color: "text-amber-400",
     items: [
-      { id: 'creer-devis', label: 'Creer / Modifier Devis' },
-      { id: 'generer-pdf', label: 'Generer PDF' },
-      { id: 'envoi', label: 'Envoi Email / WhatsApp' },
+      { id: 'creer-devis', label: 'CRÉER / MODIFIER DEVIS', icon: FilePlus },
+      { id: 'generer-pdf', label: 'GÉNÉRER PDF', icon: FileDown },
+      { id: 'envoi', label: 'ENVOI EMAIL / WHATSAPP', icon: Send },
     ]
   },
   {
-    title: "Fournisseurs",
-    color: "text-accent-green",
+    title: "FOURNISSEURS",
+    color: "text-green-400",
     items: [
-      { id: 'recherche-four', label: 'Recherche Fournisseurs', isButton: true },
-      { id: 'comparatif', label: 'Comparatif Prix' },
+      { id: 'ajouter-fournisseur', label: 'AJOUTER FOURNISSEUR', icon: UserPlus },
+      { id: 'liste-fournisseurs', label: 'LISTE FOURNISSEURS', icon: List },
+      { id: 'consultation-fournisseur', label: 'CONSULTATION FOURNISSEUR', icon: ClipboardList },
     ]
   },
   {
-    title: "Gestion Articles",
+    title: "GESTION ARTICLES",
+    color: "text-cyan-400",
     items: [
-      { id: 'ajouter-article', label: 'Ajouter Article' },
-      { id: 'modifier-article', label: 'Modifier / Supprimer' },
-      { id: 'liste-articles', label: 'Liste Complete' },
+      { id: 'ajouter-article', label: 'AJOUTER ARTICLE', icon: PlusCircle },
+      { id: 'modifier-article', label: 'MODIFIER / SUPPRIMER', icon: Edit },
+      { id: 'liste-articles', label: 'LISTE COMPLÈTE', icon: Package },
     ]
   },
   {
-    title: "Statistiques",
-    color: "text-accent-red",
+    title: "STATISTIQUES",
+    color: "text-pink-400",
     items: [
-      { id: 'tableau-bord', label: 'Tableau de Bord' },
-      { id: 'chiffre', label: "Chiffre d'Affaires" },
+      { id: 'tableau-bord', label: 'TABLEAU DE BORD', icon: BarChart2 },
+      { id: 'chiffre', label: "CHIFFRE D'AFFAIRES", icon: TrendingUp },
     ]
   }
 ];
 
 export default function AdminSidebar() {
   const { adminSection, setAdminSection } = useApp();
+  const { data: session } = useSession();
+  const user = session?.user as any;
 
   return (
-    <aside className="bg-bg-card border-r border-border-custom p-4 md:p-5 w-[240px] md:w-[280px] hidden md:block overflow-y-auto">
-      {sections.map((section, idx) => (
-        <div key={idx} className="mb-4 md:mb-6">
-          <div className={`text-[9px] md:text-[10px] font-bold uppercase tracking-[1.5px] mb-2 md:mb-3 pl-2 ${section.color || 'text-gold'}`}>
-            {section.title}
-          </div>
-          {section.items.map((item: SidebarItem) => (
-            item.isButton ? (
-              <button
-                key={item.id}
-                onClick={() => setAdminSection(item.id)}
-                className="w-full bg-gradient-to-br from-accent-green to-emerald-600 text-white py-2.5 md:py-3 rounded-xl font-bold text-[10px] md:text-xs flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-accent-green/30 transition-all"
-              >
-                <Search size={12} /> {item.label}
-              </button>
-            ) : (
-              <div
-                key={item.id}
-                onClick={() => setAdminSection(item.id)}
-                className={`flex items-center gap-2 md:gap-2.5 px-2.5 md:px-3 py-2 md:py-2.5 rounded-xl text-xs md:text-[13px] cursor-pointer mb-0.5 md:mb-1 transition-all ${
-                  adminSection === item.id
-                    ? 'bg-gold/10 text-gold'
-                    : 'text-text-muted hover:bg-gold/10 hover:text-gold'
-                }`}
-              >
-                {item.label}
-                {item.badge && (
-                  <span className={`ml-auto ${item.badgeColor} text-white text-[9px] md:text-[10px] px-1.5 md:px-2 py-0.5 rounded-full font-bold`}>
-                    {item.badge}
-                  </span>
-                )}
-              </div>
-            )
-          ))}
+    <aside className="bg-slate-950 border-r border-slate-800 w-[260px] hidden md:flex flex-col overflow-hidden h-screen sticky top-0">
+      {/* Logo Header */}
+      <div className="flex flex-col items-center justify-center py-5 px-4 border-b border-slate-800 bg-slate-900">
+        <div className="w-32 h-16 relative mb-2">
+          <Image src="/logo.png" alt="AUTOP Logo" fill style={{ objectFit: 'contain' }} priority />
         </div>
-      ))}
+        <div className="text-[9px] font-bold text-slate-500 uppercase tracking-[2px]">CONSOLE ADMIN</div>
+      </div>
+
+      {/* User Info */}
+      <div className="flex items-center gap-2 px-4 py-3 bg-slate-900/50 border-b border-slate-800">
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+          {user?.name?.charAt(0)?.toUpperCase() || 'A'}
+        </div>
+        <div className="min-w-0">
+          <p className="text-white font-semibold text-xs truncate">{user?.name?.toUpperCase() || 'ADMIN'}</p>
+          <p className="text-slate-500 text-[9px] truncate">{user?.email}</p>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
+        {sections.map((section, idx) => (
+          <div key={idx}>
+            <div className={`text-[9px] font-black uppercase tracking-[2px] mb-1.5 px-2 ${section.color}`}>
+              {section.title}
+            </div>
+            {section.items.map((item) => {
+              const Icon = item.icon;
+              const isActive = adminSection === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setAdminSection(item.id)}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wide mb-0.5 transition-all duration-150 group ${
+                    isActive
+                      ? 'bg-red-600 text-white shadow-lg shadow-red-500/20'
+                      : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-white'}`} />
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {item.badge && (
+                    <span className={`${item.badgeColor} text-white text-[9px] px-1.5 py-0.5 rounded-full font-black min-w-[18px] text-center`}>
+                      {item.badge}
+                    </span>
+                  )}
+                  {isActive && <ChevronRight className="w-3 h-3 ml-auto flex-shrink-0" />}
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </nav>
+
+      {/* Logout */}
+      <div className="p-3 border-t border-slate-800">
+        <button
+          onClick={() => signOut({ callbackUrl: '/connexion' })}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wide text-slate-400 hover:bg-red-600/10 hover:text-red-400 transition-all"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+          DÉCONNEXION
+        </button>
+      </div>
     </aside>
   );
 }

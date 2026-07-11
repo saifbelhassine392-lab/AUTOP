@@ -1,64 +1,89 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { getServerSession } from 'next-auth'
-import { NextAuthOptions } from 'next-auth'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { slugify } from '@/lib/utils';
 
-// GET - Liste des produits (public)
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url)
-    const category = searchParams.get('category')
-    const search = searchParams.get('search')
-    const brand = searchParams.get('brand')
+    const { searchParams } = new URL(req.url);
+    const search = searchParams.get('search') || '';
+    const category = searchParams.get('category') || '';
 
-    const where: any = { isActive: true }
-
-    if (category) {
-      where.category = { slug: category }
-    }
+    const where: any = { status: 'ACTIVE' };
 
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
         { reference: { contains: search, mode: 'insensitive' } },
-        { brand: { contains: search, mode: 'insensitive' } },
-      ]
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
     }
 
-    if (brand) {
-      where.brand = { contains: brand, mode: 'insensitive' }
+    if (category) {
+      where.category = { slug: category };
     }
 
     const products = await prisma.product.findMany({
       where,
-      include: { category: true },
-      orderBy: { createdAt: 'desc' },
-    })
+      include: {
+        category: { select: { name: true } },
+      },
+      orderBy: { reference: 'asc' },
+    });
 
-    return NextResponse.json(products)
+    return NextResponse.json(products);
   } catch (error) {
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+    console.error('Products GET error:', error);
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
 
-// POST - Créer un produit (admin uniquement)
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session || session.user.role !== 'admin') {
-    return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
-  }
-
   try {
-    const data = await req.json()
+    const body = await req.json();
+    
+    // Auto-fill SKU and slug if not provided
+    const reference = body.reference || 'REF-' + Date.now();
+    const sku = body.sku || reference;
+    const name = body.name || body.designation;
+    const slug = body.slug || (slugify(name) + '-' + reference);
+
+    let categoryId = body.categoryId;
+    if (!categoryId) {
+      let category = await prisma.category.findFirst();
+      if (!category) {
+        category = await prisma.category.create({
+          data: {
+            name: 'Général',
+            slug: 'general',
+          }
+        });
+      }
+      categoryId = category.id;
+    }
+
     const product = await prisma.product.create({
       data: {
-        ...data,
-        images: data.images || [],
-        compatible: data.compatible || [],
+        sku,
+        name,
+        slug,
+        description: body.description,
+        price: parseFloat(body.price) || parseFloat(body.sellingPrice) || 0,
+        oldPrice: parseFloat(body.oldPrice) || parseFloat(body.costPrice) || null,
+        stock: parseInt(body.stock) || parseInt(body.stockQty) || 0,
+        images: body.images || [],
+        reference,
+        brand: body.brand,
+        categoryId,
+        status: body.status || 'ACTIVE',
       },
-    })
-    return NextResponse.json(product, { status: 201 })
+      include: {
+        category: true,
+      },
+    });
+
+    return NextResponse.json(product);
   } catch (error) {
-    return NextResponse.json({ error: 'Erreur création produit' }, { status: 500 })
+    console.error('Create product error:', error);
+    return NextResponse.json({ error: 'Erreur creation produit' }, { status: 500 });
   }
 }

@@ -1,10 +1,10 @@
-﻿'use client'
+'use client'
 
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
 import { useCart } from '@/contexts/CartContext'
 import { useState } from 'react'
-import { ShoppingCart, Menu, X, User, LogOut } from 'lucide-react'
+import { ShoppingCart, Menu, X, LogOut } from 'lucide-react'
 
 export default function Header() {
   const { data: session } = useSession()
@@ -17,19 +17,20 @@ export default function Header() {
     { href: '/devis', label: 'Devis' },
   ]
 
-  const proLinks = session?.user?.role === 'admin' 
-    ? [{ href: '/admin', label: 'Admin' }]
-    : session?.user?.role === 'pro'
+  const user = session?.user as any
+  const proLinks = user?.role === 'ADMIN' 
+    ? [{ href: '/admin/dashbord', label: 'Admin' }]
+    : user?.role === 'PROFESSIONAL'
     ? [{ href: '/espace-pro', label: 'Espace Pro' }]
     : []
 
   return (
-    <header className="bg-white shadow-md sticky top-0 z-50">
+    <header className="bg-slate-950/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 text-slate-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <span className="text-2xl font-bold text-red-600">AUTOP</span>
+            <span className="text-2xl font-black tracking-wider text-red-500">AUTOP</span>
           </Link>
 
           {/* Desktop Nav */}
@@ -38,7 +39,7 @@ export default function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-gray-700 hover:text-red-600 font-medium transition"
+                className="text-slate-300 hover:text-red-500 font-semibold transition text-sm"
               >
                 {link.label}
               </Link>
@@ -46,11 +47,11 @@ export default function Header() {
           </nav>
 
           {/* Right side */}
-          <div className="flex items-center space-x-4">
-            <Link href="/panier" className="relative p-2 text-gray-700 hover:text-red-600">
-              <ShoppingCart className="w-6 h-6" />
+          <div className="flex items-center space-x-6">
+            <Link href="/panier" className="relative p-2 text-slate-300 hover:text-red-500 transition">
+              <ShoppingCart className="w-5 h-5" />
               {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
                   {totalItems}
                 </span>
               )}
@@ -58,12 +59,12 @@ export default function Header() {
 
             {session ? (
               <div className="hidden md:flex items-center space-x-4">
-                <Link href="/mes-devis" className="text-sm text-gray-600 hover:text-red-600">
+                <Link href="/mes-devis" className="text-sm text-slate-400 hover:text-red-500 transition font-medium">
                   Mes Devis
                 </Link>
                 <button
                   onClick={() => signOut()}
-                  className="flex items-center space-x-1 text-gray-600 hover:text-red-600"
+                  className="flex items-center space-x-1.5 text-slate-400 hover:text-red-500 transition font-medium"
                 >
                   <LogOut className="w-4 h-4" />
                   <span className="text-sm">Déconnexion</span>
@@ -71,12 +72,12 @@ export default function Header() {
               </div>
             ) : (
               <div className="hidden md:flex items-center space-x-4">
-                <Link href="/connexion" className="text-gray-700 hover:text-red-600 font-medium">
+                <Link href="/connexion" className="text-slate-300 hover:text-red-500 font-semibold transition text-sm">
                   Connexion
                 </Link>
                 <Link
                   href="/inscription"
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition text-sm"
                 >
                   S'inscrire
                 </Link>
@@ -85,23 +86,23 @@ export default function Header() {
 
             {/* Mobile menu button */}
             <button
-              className="md:hidden p-2"
+              className="md:hidden p-2 text-slate-300 hover:text-white"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
 
         {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t">
-            <div className="flex flex-col space-y-3">
+          <div className="md:hidden py-4 border-t border-slate-800">
+            <div className="flex flex-col space-y-3 px-2">
               {[...navLinks, ...proLinks].map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-gray-700 hover:text-red-600 font-medium px-2 py-1"
+                  className="text-slate-300 hover:text-red-500 font-semibold py-1 transition block text-sm"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {link.label}
@@ -109,18 +110,39 @@ export default function Header() {
               ))}
               {session ? (
                 <>
-                  <Link href="/mes-devis" className="text-gray-700 px-2 py-1">Mes Devis</Link>
+                  <Link 
+                    href="/mes-devis" 
+                    className="text-slate-300 hover:text-red-500 font-semibold py-1 transition block text-sm"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Mes Devis
+                  </Link>
                   <button
-                    onClick={() => signOut()}
-                    className="text-left text-red-600 px-2 py-1"
+                    onClick={() => {
+                      signOut()
+                      setMobileMenuOpen(false)
+                    }}
+                    className="text-left text-red-500 font-semibold py-1 transition block text-sm"
                   >
                     Déconnexion
                   </button>
                 </>
               ) : (
                 <>
-                  <Link href="/connexion" className="text-gray-700 px-2 py-1">Connexion</Link>
-                  <Link href="/inscription" className="text-gray-700 px-2 py-1">Inscription</Link>
+                  <Link 
+                    href="/connexion" 
+                    className="text-slate-300 hover:text-red-500 font-semibold py-1 transition block text-sm"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Connexion
+                  </Link>
+                  <Link 
+                    href="/inscription" 
+                    className="text-slate-300 hover:text-red-500 font-semibold py-1 transition block text-sm"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Inscription
+                  </Link>
                 </>
               )}
             </div>

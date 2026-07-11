@@ -1,52 +1,38 @@
-import { NextRequest, NextResponse } from 'next/server'
-import bcrypt from 'bcryptjs'
-import { prisma } from '@/lib/prisma'
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const { email, password, name, phone, company, matriculeFiscal } = await req.json()
+    const body = await req.json();
+    const { name, email, password } = body;
 
-    if (!email || !password || !name) {
-      return NextResponse.json(
-        { error: 'Email, mot de passe et nom sont requis' },
-        { status: 400 }
-      )
+    // Vérification des 3 champs réels de ton interface
+    if (!name || !email || !password) {
+      return NextResponse.json({ message: "Tous les champs sont obligatoires" }, { status: 400 });
     }
 
-    const existingUser = await prisma.user.findUnique({ where: { email } })
+    const existingUser = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+
     if (existingUser) {
-      return NextResponse.json(
-        { error: 'Cet email est déjà utilisé' },
-        { status: 409 }
-      )
+      return NextResponse.json({ message: "Cet email est déjà utilisé" }, { status: 400 });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10)
-
-    const user = await prisma.user.create({
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    await prisma.user.create({
       data: {
-        email,
-        password: hashedPassword,
         name,
-        phone: phone || null,
-        company: company || null,
-        matriculeFiscal: matriculeFiscal || null,
-        role: company ? 'pro' : 'client',
+        email: email.toLowerCase(),
+        password: hashedPassword,
       },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-      },
-    })
+    });
 
-    return NextResponse.json({ user, message: 'Inscription réussie' }, { status: 201 })
+    return NextResponse.json({ message: "Utilisateur créé avec succès" }, { status: 201 });
   } catch (error) {
-    console.error('Register error:', error)
-    return NextResponse.json(
-      { error: 'Erreur lors de l\'inscription' },
-      { status: 500 }
-    )
+    console.error("DÉTAIL ERREUR INSCRIPTION :", error);
+    return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
   }
 }

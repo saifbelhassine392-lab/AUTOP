@@ -1,18 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const session = await getServerSession()
-  if (!session || session.user.role !== 'admin') {
+  const session = await getServerSession(authOptions)
+  if (!session || !session.user) {
+    return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+  }
+
+  const user = session.user as any
+  const isAuthorized = user.role === 'ADMIN' || user.role === 'PROFESSIONAL'
+  if (!isAuthorized) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
   }
 
   try {
     const { items, responseNote, totalPrice } = await req.json()
+
+    // Formater la réponse pour y inclure automatiquement le nom et le numéro de téléphone de l'admin
+    const fullResponseNote = `${responseNote || ''}\n\n---\n🛠️ Devis préparé par : ${user.name || 'AUTOP'} (Tél : ${user.phone || 'N/A'})`
 
     // Mettre à jour les items avec les prix proposés
     for (const item of items) {
@@ -30,13 +40,14 @@ export async function POST(
       data: {
         status: 'completed',
         totalPrice,
-        responseNote,
+        responseNote: fullResponseNote,
       },
       include: { items: { include: { product: true } }, user: true },
     })
 
     return NextResponse.json(devis)
   } catch (error) {
-    return NextResponse.json({ error: 'Erreur' }, { status: 500 })
+    console.error('Devis respond error:', error)
+    return NextResponse.json({ error: 'Erreur lors du traitement' }, { status: 500 })
   }
 }

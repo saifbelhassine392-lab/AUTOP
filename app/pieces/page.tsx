@@ -57,8 +57,8 @@ export default function PiecesPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Catalogue de Pièces</h1>
+    <div className="max-w-7xl mx-auto px-4 py-8 text-slate-100 bg-[#0a0e1a] min-h-screen">
+      <h1 className="text-3xl font-black mb-8 tracking-tight">Catalogue de Pièces</h1>
 
       {/* Filtres */}
       <div className="flex flex-col md:flex-row gap-4 mb-8">
@@ -66,29 +66,32 @@ export default function PiecesPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
-            placeholder="Rechercher une pièce..."
+            placeholder="Rechercher une pièce par désignation, référence..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-red-500"
+            className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-800 text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 placeholder-slate-500"
           />
         </div>
         <select
           value={selectedCategory}
           onChange={(e) => {
             setSelectedCategory(e.target.value)
-            handleSearch()
+            const params = new URLSearchParams()
+            if (search) params.append('search', search)
+            if (e.target.value) params.append('category', e.target.value)
+            fetchProducts(params.toString())
           }}
-          className="px-4 py-3 border rounded-lg focus:ring-2 focus:ring-red-500"
+          className="px-4 py-3 bg-slate-900 border border-slate-800 text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
         >
-          <option value="">Toutes les catégories</option>
-          {categories.map((cat: any) => (
-            <option key={cat.id} value={cat.slug}>{cat.name}</option>
+          <option value="" className="bg-slate-900 text-slate-100">Toutes les catégories</option>
+          {Array.isArray(categories) && categories.map((cat: any) => (
+            <option key={cat.id} value={cat.slug} className="bg-slate-900 text-slate-100">{cat.name}</option>
           ))}
         </select>
         <button
           onClick={handleSearch}
-          className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 flex items-center gap-2"
+          className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition duration-200"
         >
           <Filter className="w-5 h-5" />
           Filtrer
@@ -99,15 +102,15 @@ export default function PiecesPage() {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[...Array(8)].map((_, i) => (
-            <div key={i} className="animate-pulse bg-gray-200 h-80 rounded-lg" />
+            <div key={i} className="animate-pulse bg-slate-800/40 border border-slate-800 h-80 rounded-xl" />
           ))}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {products.map((product) => (
-            <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
-              <div className="relative h-48 bg-gray-100">
-                {product.images[0] ? (
+          {Array.isArray(products) && products.map((product) => (
+            <div key={product.id} className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden hover:border-red-500/50 transition duration-300 shadow-xl flex flex-col justify-between">
+              <div className="relative h-48 bg-slate-950 flex items-center justify-center">
+                {product.images && product.images[0] ? (
                   <Image
                     src={product.images[0]}
                     alt={product.name}
@@ -115,36 +118,42 @@ export default function PiecesPage() {
                     className="object-cover"
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-gray-400">
+                  <div className="flex items-center justify-center h-full text-slate-600 text-sm">
                     Pas d'image
                   </div>
                 )}
-                {product.oldPrice && (
-                  <span className="absolute top-2 left-2 bg-red-600 text-white text-xs px-2 py-1 rounded">
+                {product.oldPrice && product.oldPrice > product.price && (
+                  <span className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
                     -{Math.round((1 - product.price / product.oldPrice) * 100)}%
                   </span>
                 )}
               </div>
-              <div className="p-4">
-                <p className="text-xs text-gray-500 mb-1">{product.brand} | {product.reference}</p>
-                <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">{product.name}</h3>
-                <div className="flex items-baseline gap-2 mb-3">
-                  <span className="text-xl font-bold text-red-600">{product.price.toFixed(2)} TND</span>
-                  {product.oldPrice && (
-                    <span className="text-sm text-gray-400 line-through">{product.oldPrice.toFixed(2)} TND</span>
-                  )}
+              <div className="p-5 flex-1 flex flex-col justify-between">
+                <div>
+                  <p className="text-[10px] font-mono text-slate-400 mb-1">{product.brand || 'Générique'} | {product.reference}</p>
+                  <h3 className="font-bold text-slate-100 text-sm mb-3 line-clamp-2">{product.name}</h3>
                 </div>
-                <p className="text-xs text-gray-500 mb-3">
-                  Stock: {product.stock > 0 ? `${product.stock} disponibles` : 'Rupture'}
-                </p>
-                <button
-                  onClick={() => addItem(product.id)}
-                  disabled={product.stock <= 0}
-                  className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  <ShoppingCart className="w-4 h-4" />
-                  Ajouter
-                </button>
+                <div>
+                  <div className="flex items-baseline gap-2 mb-3">
+                    <span className="text-lg font-black text-red-500 font-mono">{product.price.toFixed(2)} TND</span>
+                    {product.oldPrice && product.oldPrice > product.price && (
+                      <span className="text-xs text-slate-500 line-through font-mono">{product.oldPrice.toFixed(2)} TND</span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${product.stock > 0 ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                      {product.stock > 0 ? `${product.stock} disponibles` : 'Rupture de stock'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => addItem(product.id)}
+                    disabled={product.stock <= 0}
+                    className="w-full bg-red-600 text-white py-2.5 rounded-xl font-bold hover:bg-red-700 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition duration-200"
+                  >
+                    <ShoppingCart className="w-4 h-4" />
+                    Ajouter au panier
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -152,8 +161,8 @@ export default function PiecesPage() {
       )}
 
       {products.length === 0 && !loading && (
-        <div className="text-center py-16 text-gray-500">
-          Aucune pièce trouvée
+        <div className="text-center py-20 text-slate-500 font-medium">
+          Aucune pièce trouvée dans le catalogue
         </div>
       )}
     </div>

@@ -1,30 +1,34 @@
-import { withAuth } from 'next-auth/middleware'
-import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-export default withAuth(
-  function middleware(req) {
-    const token = req.nextauth.token
-    const path = req.nextUrl.pathname
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-    // Protection admin
-    if (path.startsWith('/admin') && token?.role !== 'admin') {
-      return NextResponse.redirect(new URL('/', req.url))
-    }
+  // 1. Liste des chemins publics (ceux qui ne demandent PAS de connexion)
+  const isPublicRoute = 
+    pathname === '/' || 
+    pathname.startsWith('/connexion') || 
+    pathname.startsWith('/inscription') ||
+    pathname.startsWith('/admin/login') || // Ta page de login admin
+    pathname.startsWith('/admin/dashbord') || // Ton dashboard admin
+    pathname.startsWith('/api/quotes') ||    // API pour les devis
+    pathname.startsWith('/api/admin');       // API pour l'admin
 
-    // Protection espace pro
-    if (path.startsWith('/espace-pro') && !['admin', 'pro'].includes(token?.role as string)) {
-      return NextResponse.redirect(new URL('/', req.url))
-    }
-  },
-  {
-    callbacks: {
-      authorized({ token }) {
-        return !!token
-      },
-    },
+  // 2. Si la route est publique, on laisse passer
+  if (isPublicRoute) {
+    return NextResponse.next();
   }
-)
 
-export const config = {
-  matcher: ['/admin/:path*', '/espace-pro/:path*', '/panier', '/mes-devis', '/devis'],
+  // 3. Ici, tu peux ajouter ta logique pour protéger les autres pages (ex: Espace Client)
+  // Si tu n'as pas encore fait l'espace client, tu peux laisser passer tout le reste
+  // ou ajouter une redirection vers /connexion.
+  
+  return NextResponse.next();
 }
+
+// 4. Configuration : on applique ce middleware partout SAUF aux fichiers statiques
+export const config = {
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|assets|public).*)',
+  ],
+};

@@ -1,42 +1,50 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { v2 as cloudinary } from 'cloudinary'
-import { getServerSession } from 'next-auth'
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-})
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession()
-  if (!session) {
-    return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
-  }
-
   try {
-    const formData = await req.formData()
-    const file = formData.get('file') as File
-
-    if (!file) {
-      return NextResponse.json({ error: 'Aucun fichier' }, { status: 400 })
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return NextResponse.json({ success: false, error: 'Non authentifie' }, { status: 401 });
     }
 
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
+    const formData = await req.formData();
+    const file = formData.get('file') as File;
+    const folder = (formData.get('folder') as string) || 'autop/products';
 
-    const result = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload_stream(
-        { folder: 'autop/products' },
-        (error, result) => {
-          if (error) reject(error)
-          else resolve(result)
-        }
-      ).end(buffer)
-    })
+    if (!file) {
+      return NextResponse.json({ success: false, error: 'Aucun fichier fourni' }, { status: 400 });
+    }
 
-    return NextResponse.json({ url: (result as any).secure_url })
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const base64 = `data:${file.type};base64,${buffer.toString('base64')}`;
+
+    const { v2: cloudinary } = await import('cloudinary');
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+
+    const result = await cloudinary.uploader.upload(base64, {
+      folder,
+      transformation: [
+        { width: 1200, height: 1200, crop: 'limit' },
+        { quality: 'auto:good' },
+      ],
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        url: result.secure_url,
+        publicId: result.public_id,
+      },
+    });
   } catch (error) {
-    return NextResponse.json({ error: 'Erreur upload' }, { status: 500 })
+    console.error('Upload error:', error);
+    return NextResponse.json({ success: false, error: 'Erreur upload' }, { status: 500 });
   }
 }

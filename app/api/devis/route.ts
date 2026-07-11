@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getServerSession } from 'next-auth'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/auth'
 
 // GET - Mes devis (client) ou tous (admin)
 export async function GET(req: NextRequest) {
-  const session = await getServerSession()
-  if (!session) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+  const session = await getServerSession(authOptions)
+  if (!session || !session.user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
   try {
-    const where = session.user.role === 'admin' ? {} : { userId: session.user.id }
+    const user = session.user as any
+    const where = user.role === 'ADMIN' ? {} : { userId: user.id }
 
     const devis = await prisma.devis.findMany({
       where,
@@ -27,15 +29,16 @@ export async function GET(req: NextRequest) {
 
 // POST - Créer un devis (client)
 export async function POST(req: NextRequest) {
-  const session = await getServerSession()
-  if (!session) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+  const session = await getServerSession(authOptions)
+  if (!session || !session.user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
   try {
+    const user = session.user as any
     const { vehicleBrand, vehicleModel, vehicleYear, vehicleVin, notes, items } = await req.json()
 
     const devis = await prisma.devis.create({
       data: {
-        userId: session.user.id,
+        userId: user.id,
         vehicleBrand,
         vehicleModel,
         vehicleYear,

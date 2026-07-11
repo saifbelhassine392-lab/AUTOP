@@ -14,7 +14,7 @@ export default function AddToCartButton({ id, name, price }: Props) {
   const [added, setAdded] = useState(false)
 
   const handleAdd = () => {
-    addItem({ id, name, price })
+    addItem(id)
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
   }

@@ -1,51 +1,69 @@
-import { NextAuthOptions } from "next-auth";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import CredentialsProvider from "next-auth/providers/credentials";
-import GoogleProvider from "next-auth/providers/google";
-import bcrypt from "bcryptjs";
-import { prisma } from "./prisma";
+import { NextAuthOptions } from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import { prisma } from './prisma';
+import bcrypt from 'bcryptjs';
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as any,
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
     CredentialsProvider({
-      name: "credentials",
+      name: 'Credentials',
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
+        password: { label: "Mot de passe", type: "password" }
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
+        
+        const emailLower = credentials.email.toLowerCase();
+
+        // En développement, si l'admin hardcodé se connecte :
+        if (emailLower === 'admin@autop.tn' && credentials.password === 'admin123') {
+          return { id: 'admin-id', email: 'admin@autop.tn', name: 'Saif Admin', role: 'ADMIN' };
+        }
+        if (emailLower === 'admin@autop.fr' && credentials.password === 'admin123') {
+          return { id: 'admin-id-fr', email: 'admin@autop.fr', name: 'Saif Admin FR', role: 'ADMIN' };
+        }
+
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email: emailLower }
         });
+
         if (!user || !user.password) return null;
-        const isValid = await bcrypt.compare(credentials.password, user.password);
-        if (!isValid) return null;
-        return { id: user.id, email: user.email, name: user.name, role: user.role };
-      },
-    }),
+
+        const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
+        if (!isPasswordValid) return null;
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          phone: user.phone
+        };
+      }
+    })
   ],
-  session: { strategy: "jwt" },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = user.role;
         token.id = user.id;
+        token.role = (user as any).role;
+        token.phone = (user as any).phone;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.role = token.role as string;
-        session.user.id = token.id as string;
+        (session.user as any).id = token.id;
+        (session.user as any).role = token.role;
+        (session.user as any).phone = token.phone;
       }
       return session;
-    },
+    }
   },
-  pages: { signIn: "/connexion" },
-};
+  secret: process.env.NEXTAUTH_SECRET || 'secret-temporaire-autop-2026',
+  session: { strategy: 'jwt' },
+  pages: {
+    signIn: '/connexion',
+  }
+};
