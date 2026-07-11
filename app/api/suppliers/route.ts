@@ -58,3 +58,24 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'Erreur suppression' }, { status: 500 });
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    const user = session?.user as any;
+    if (!user || user.role !== 'ADMIN') return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
+
+    const body = await req.json();
+    const { id, name, contactName, phone, email, address, city, isActive } = body;
+    if (!id) return NextResponse.json({ error: 'ID requis' }, { status: 400 });
+
+    const updated = await prisma.supplier.update({
+      where: { id },
+      data: { name, contactName, phone, email, address, city, isActive }
+    });
+    return NextResponse.json({ success: true, data: updated });
+  } catch (err) {
+    console.error('Supplier PATCH error:', err);
+    return NextResponse.json({ error: 'Erreur lors de la mise à jour' }, { status: 500 });
+  }
+}

@@ -532,7 +532,7 @@ export default function MesDevisPage() {
                       ))}
                     </div>
 
-                    {d.isTreated && d.status !== 'Traité' && d.status !== 'completed' && (
+                    {d.isTreated && d.status === 'Traité' && (
                       <div className="bg-green-600/5 border border-green-500/10 rounded-2xl p-5 mt-5">
                         <h4 className="text-green-400 font-black text-xs uppercase tracking-wider mb-2">Proposition Commerciale</h4>
                         <p className="text-xs text-slate-300 mb-4 uppercase">{d.response || 'Votre devis est traité par notre comptoir.'}</p>
@@ -568,7 +568,7 @@ export default function MesDevisPage() {
                         <p className="text-xs text-slate-400 mt-1 uppercase">
                           Créée le : <strong className="text-slate-200">{new Date(o.createdAt).toLocaleDateString('fr-FR')}</strong>
                         </p>
-                        <p className="text-[10px] text-slate-500 mt-1 uppercase">Montant Total TTC: <strong>{o.total.toFixed(2)} TND</strong></p>
+                        <p className="text-[10px] text-slate-500 mt-1 uppercase">Montant Total TTC: <strong>{o.total.toFixed(3)} TND</strong></p>
                       </div>
                       <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
                         o.status === 'DELIVERED' 
@@ -594,7 +594,7 @@ export default function MesDevisPage() {
                       {o.items?.map((item: any) => (
                         <div key={item.id} className="flex justify-between items-center text-sm border-b border-slate-800/40 pb-2 last:border-0 last:pb-0">
                           <span className="text-slate-300 uppercase text-xs">{item.productName}</span>
-                          <span className="font-bold text-slate-400 text-xs font-mono">x{item.quantity} | {item.price.toFixed(2)} TND</span>
+                          <span className="font-bold text-slate-400 text-xs font-mono">x{item.quantity} | {item.price.toFixed(3)} TND</span>
                         </div>
                       ))}
                     </div>
@@ -617,7 +617,7 @@ export default function MesDevisPage() {
                       <p className="text-xs text-slate-400 mt-1 uppercase">
                         Date d'émission : <strong className="text-slate-300">{new Date(o.updatedAt).toLocaleDateString('fr-FR')}</strong>
                       </p>
-                      <p className="text-xs text-slate-400 uppercase">Montant réglé : <strong className="text-green-400 font-mono">{o.total.toFixed(2)} TND</strong></p>
+                      <p className="text-xs text-slate-400 uppercase">Montant réglé : <strong className="text-green-400 font-mono">{o.total.toFixed(3)} TND</strong></p>
                     </div>
                     
                     <button
@@ -658,8 +658,8 @@ export default function MesDevisPage() {
                           body: o.items.map((it: any) => [
                             it.productName,
                             it.quantity.toString(),
-                            it.price.toFixed(2),
-                            it.total.toFixed(2)
+                            it.price.toFixed(3),
+                            it.total.toFixed(3)
                           ]),
                           theme: "grid",
                           headStyles: { fillColor: [30, 41, 59] },
@@ -761,7 +761,7 @@ export default function MesDevisPage() {
                         }}
                         className="bg-transparent text-slate-200 border-b border-transparent hover:border-slate-800 focus:border-red-500 focus:outline-none text-xs font-bold w-full uppercase"
                       />
-                      <span className="text-[9px] text-slate-500 font-mono block mt-0.5">P.U. HT : {item.price.toFixed(2)} TND</span>
+                      <span className="text-[9px] text-slate-500 font-mono block mt-0.5">P.U. HT : {item.price.toFixed(3)} TND</span>
                     </div>
 
                     <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
@@ -827,12 +827,12 @@ export default function MesDevisPage() {
                 return (
                   <div className="bg-slate-950/60 p-5 rounded-2xl border border-slate-800/80 flex justify-between items-center text-xs">
                     <div>
-                      <p className="text-slate-500 uppercase tracking-widest text-[9px]">TOTAL H.T. : {subtotal.toFixed(2)} TND</p>
-                      <p className="text-slate-500 uppercase tracking-widest text-[9px] mt-1">TVA (19%) : {tax.toFixed(2)} TND</p>
+                      <p className="text-slate-500 uppercase tracking-widest text-[9px]">TOTAL H.T. : {subtotal.toFixed(3)} TND</p>
+                      <p className="text-slate-500 uppercase tracking-widest text-[9px] mt-1">TVA (19%) : {tax.toFixed(3)} TND</p>
                     </div>
                     <div className="text-right">
                       <p className="text-slate-400 uppercase tracking-widest text-[9px]">TOTAL T.T.C. :</p>
-                      <p className="text-xl font-black text-green-400 font-mono mt-0.5">{total.toFixed(2)} TND</p>
+                      <p className="text-xl font-black text-green-400 font-mono mt-0.5">{total.toFixed(3)} TND</p>
                     </div>
                   </div>
                 );

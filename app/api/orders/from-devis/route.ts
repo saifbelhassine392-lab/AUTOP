@@ -71,9 +71,13 @@ export async function POST(req: NextRequest) {
     const tax = subtotal * 0.19; // 19% TVA tunisienne
     const total = subtotal + tax;
 
+    const orderCount = await prisma.order.count();
+    const nextNumber = String(orderCount + 1).padStart(6, '0');
+    const orderNumber = `CMD-${nextNumber}`;
+
     const order = await prisma.order.create({
       data: {
-        orderNumber: 'CMD-' + Date.now().toString().slice(-6).toUpperCase(),
+        orderNumber,
         userId: user.id,
         status: 'PENDING',
         paymentStatus: 'PENDING',

@@ -319,14 +319,14 @@ function SectionCreerDevis({ quoteToLoad, onClearQuote }: SectionCreerDevisProps
                         className="w-16 bg-white text-black font-bold text-xs px-2 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:border-red-500 text-center" />
                     </td>
                     <td className="px-2 py-2">
-                      <input type="number" value={it.puHT} min={0} step={0.01} onChange={e => updateLine(i, 'puHT', parseFloat(e.target.value) || 0)}
-                        className="w-24 bg-white text-black font-bold text-xs px-2 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:border-red-500 text-right" />
+                      <input type="number" value={it.puHT} min={0} step={0.001} onChange={e => updateLine(i, 'puHT', parseFloat(e.target.value) || 0)}
+                        className="w-24 bg-white text-black font-bold text-xs px-2 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:border-red-500 text-right" placeholder="0.000" />
                     </td>
                     <td className="px-2 py-2">
                       <input type="number" value={it.discount} min={0} max={100} step={1} onChange={e => updateLine(i, 'discount', parseFloat(e.target.value) || 0)}
                         className="w-16 bg-white text-black font-bold text-xs px-2 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:border-red-500 text-center" />
                     </td>
-                    <td className="px-2 py-2 text-right font-black text-cyan-400">{discounted.toFixed(2)} TND</td>
+                    <td className="px-2 py-2 text-right font-black text-cyan-400">{discounted.toFixed(3)} TND</td>
                     <td className="px-2 py-2 text-center">
                       <button onClick={() => removeLine(i)} className="text-slate-500 hover:text-red-400 transition p-1">
                         <Trash2 className="w-3.5 h-3.5" />
@@ -352,25 +352,25 @@ function SectionCreerDevis({ quoteToLoad, onClearQuote }: SectionCreerDevisProps
           <div className="space-y-1.5 text-sm">
             <div className="flex justify-between">
               <span className="text-slate-400 font-bold uppercase text-xs">SOUS-TOTAL HT</span>
-              <span className="font-black text-white">{subtotalHT.toFixed(2)} TND</span>
+              <span className="font-black text-white">{subtotalHT.toFixed(3)} TND</span>
             </div>
             {globalDiscount > 0 && (
               <div className="flex justify-between">
                 <span className="text-red-400 font-bold uppercase text-xs">REMISE GLOBALE ({globalDiscount}%)</span>
-                <span className="font-black text-red-400">-{globalDiscountAmt.toFixed(2)} TND</span>
+                <span className="font-black text-red-400">-{globalDiscountAmt.toFixed(3)} TND</span>
               </div>
             )}
             <div className="flex justify-between">
               <span className="text-slate-400 font-bold uppercase text-xs">APRÈS REMISE HT</span>
-              <span className="font-black text-white">{afterDiscount.toFixed(2)} TND</span>
+              <span className="font-black text-white">{afterDiscount.toFixed(3)} TND</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-400 font-bold uppercase text-xs">TVA 19%</span>
-              <span className="font-black text-white">{tva.toFixed(2)} TND</span>
+              <span className="font-black text-white">{tva.toFixed(3)} TND</span>
             </div>
             <div className="flex justify-between pt-2 border-t border-slate-700">
               <span className="text-amber-400 font-black uppercase">TOTAL TTC</span>
-              <span className="font-black text-amber-400 text-lg">{totalTTC.toFixed(2)} TND</span>
+              <span className="font-black text-amber-450 text-lg">{totalTTC.toFixed(3)} TND</span>
             </div>
           </div>
         </div>
@@ -495,6 +495,8 @@ function SectionListeFournisseurs() {
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [editingSupplier, setEditingSupplier] = useState<any | null>(null);
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     fetch('/api/suppliers').then(r => r.json()).then(d => {
@@ -518,7 +520,7 @@ function SectionListeFournisseurs() {
       <h2 className="text-xl font-black uppercase tracking-widest text-white mb-1 flex items-center gap-2">
         <List className="w-5 h-5 text-green-400" /> LISTE FOURNISSEURS
       </h2>
-      <p className="text-slate-400 text-xs uppercase tracking-wider mb-5">GÉREZ VOS FOURNISSEURS ENREGISTRÉS</p>
+      <p className="text-slate-400 text-xs uppercase tracking-wider mb-5">GÉREZ ET MODIFIEZ VOS FOURNISSEURS ENREGISTRÉS</p>
 
       <div className="flex gap-2 mb-5">
         <div className="relative flex-1">
@@ -547,20 +549,85 @@ function SectionListeFournisseurs() {
                 </div>
                 <div>
                   <p className="font-black text-white uppercase text-sm">{s.name}</p>
-                  <p className="text-[10px] text-slate-400 uppercase">{s.contactName && `CONTACT: ${s.contactName} · `}{s.phone && `TÉL: ${s.phone}`}</p>
+                  <p className="text-[10px] text-slate-405 uppercase">{s.contactName && `CONTACT: ${s.contactName} · `}{s.phone && `TÉL: ${s.phone}`}</p>
                   <p className="text-[10px] text-slate-500 uppercase">{s.city}</p>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${s.isActive ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
                   {s.isActive ? 'ACTIF' : 'INACTIF'}
                 </span>
-                <button onClick={() => handleDelete(s.id)} className="text-slate-500 hover:text-red-400 transition p-1.5">
+                <button onClick={() => setEditingSupplier(s)} className="text-slate-400 hover:text-green-400 transition p-1.5" title="Modifier">
+                  <Edit className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => handleDelete(s.id)} className="text-slate-500 hover:text-red-400 transition p-1.5" title="Supprimer">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {editingSupplier && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-black text-white uppercase mb-4">MODIFIER LE FOURNISSEUR</h3>
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className={labelCls}>NOM FOURNISSEUR *</label>
+                <input type="text" value={editingSupplier.name} onChange={e => setEditingSupplier({ ...editingSupplier, name: e.target.value })} className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>CONTACT / RESPONSABLE</label>
+                <input type="text" value={editingSupplier.contactName || ''} onChange={e => setEditingSupplier({ ...editingSupplier, contactName: e.target.value })} className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>TÉLÉPHONE</label>
+                <input type="text" value={editingSupplier.phone || ''} onChange={e => setEditingSupplier({ ...editingSupplier, phone: e.target.value })} className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>EMAIL</label>
+                <input type="email" value={editingSupplier.email || ''} onChange={e => setEditingSupplier({ ...editingSupplier, email: e.target.value })} className="w-full bg-white text-black font-semibold text-sm px-3 py-2 rounded-lg border border-slate-300 focus:outline-none" />
+              </div>
+              <div>
+                <label className={labelCls}>ADRESSE</label>
+                <input type="text" value={editingSupplier.address || ''} onChange={e => setEditingSupplier({ ...editingSupplier, address: e.target.value })} className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>VILLE</label>
+                <input type="text" value={editingSupplier.city || ''} onChange={e => setEditingSupplier({ ...editingSupplier, city: e.target.value })} className={inputCls} />
+              </div>
+              <div className="flex items-center gap-2 mt-2">
+                <input type="checkbox" checked={editingSupplier.isActive} onChange={e => setEditingSupplier({ ...editingSupplier, isActive: e.target.checked })} id="edit-supplier-active" className="rounded" />
+                <label htmlFor="edit-supplier-active" className="font-bold text-white uppercase select-none">FOURNISSEUR ACTIF</label>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-5">
+              <button onClick={() => setEditingSupplier(null)} className="flex-1 py-2.5 bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wider">ANNULER</button>
+              <button 
+                onClick={async () => {
+                  setUpdating(true);
+                  const res = await fetch('/api/suppliers', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(editingSupplier)
+                  });
+                  if (res.ok) {
+                    setSuppliers(prev => prev.map(s => s.id === editingSupplier.id ? editingSupplier : s));
+                    setEditingSupplier(null);
+                  } else {
+                    alert('Erreur lors de la mise à jour');
+                  }
+                  setUpdating(false);
+                }}
+                disabled={updating}
+                className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-black uppercase tracking-wider disabled:opacity-50"
+              >
+                ENREGISTRER
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -574,7 +641,7 @@ function SectionConsultationFournisseur() {
 
   // Tab 1: Bon de commande
   const [selectedSupplier, setSelectedSupplier] = useState('');
-  const [items, setItems] = useState([{ reference: '', designation: '', quantity: 1, unitPrice: 0 }]);
+  const [items, setItems] = useState([{ reference: '', designation: '', quantity: 1, unitPrice: 0, discount: 0, tva: 19 }]);
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [savedOrder, setSavedOrder] = useState<any>(null);
@@ -582,19 +649,27 @@ function SectionConsultationFournisseur() {
   // Tab 2: Comparateur & Consultation
   const [compItems, setCompItems] = useState([{ reference: '', designation: '', quantity: 1 }]);
   const [selectedSuppIds, setSelectedSuppIds] = useState<string[]>([]);
-  // Prices mapping: { [supplierId]: { [itemIndex]: price } }
-  const [compPrices, setCompPrices] = useState<Record<string, Record<number, number>>>({});
+  // Prices mapping: { [supplierId]: { [itemIndex]: { price: number, discount: number } } }
+  const [compPrices, setCompPrices] = useState<Record<string, Record<number, { price: number, discount: number }>>>({});
 
   useEffect(() => {
     fetch('/api/suppliers').then(r => r.json()).then(d => setSuppliers(d.data || []));
   }, []);
 
-  const addLine = () => setItems(p => [...p, { reference: '', designation: '', quantity: 1, unitPrice: 0 }]);
+  const addLine = () => setItems(p => [...p, { reference: '', designation: '', quantity: 1, unitPrice: 0, discount: 0, tva: 19 }]);
   const removeLine = (i: number) => setItems(p => p.filter((_, idx) => idx !== i));
   const updateItem = (i: number, field: string, val: any) =>
     setItems(p => p.map((it, idx) => idx === i ? { ...it, [field]: val } : it));
 
-  const totalAmount = items.reduce((sum, it) => sum + it.quantity * it.unitPrice, 0);
+  // Calculations for PO
+  const subtotalHT = items.reduce((sum, it) => sum + (it.quantity * it.unitPrice), 0);
+  const totalDiscount = items.reduce((sum, it) => sum + (it.quantity * it.unitPrice * (it.discount / 100)), 0);
+  const totalHTNet = subtotalHT - totalDiscount;
+  const totalTva = items.reduce((sum, it) => {
+    const net = (it.quantity * it.unitPrice) * (1 - it.discount / 100);
+    return sum + (net * (it.tva / 100));
+  }, 0);
+  const totalTTC = totalHTNet + totalTva;
 
   const handleCreateOrder = async () => {
     if (!selectedSupplier) { alert('VEUILLEZ SÉLECTIONNER UN FOURNISSEUR'); return; }
@@ -607,7 +682,10 @@ function SectionConsultationFournisseur() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           supplierId: selectedSupplier,
-          items: items.filter(it => it.designation),
+          items: items.filter(it => it.designation).map(it => ({
+            ...it,
+            total: it.quantity * it.unitPrice * (1 - it.discount / 100)
+          })),
           notes,
           status: 'DRAFT'
         })
@@ -619,9 +697,94 @@ function SectionConsultationFournisseur() {
     } finally { setSaving(false); }
   };
 
-  const handlePrint = async () => {
-    if (!savedOrder) { await handleCreateOrder(); }
-    window.print();
+  // PDF download for PO
+  const handleDownloadPO_PDF = async () => {
+    const supp = suppliers.find(s => s.id === selectedSupplier);
+    if (!supp) { alert("VEUILLEZ SÉLECTIONNER UN FOURNISSEUR"); return; }
+    
+    const { jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+    const doc = new jsPDF();
+
+    doc.setFillColor(30, 41, 59);
+    doc.rect(0, 0, 210, 40, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(22);
+    doc.text("AUTOP TUNISIE", 20, 24);
+    doc.setFontSize(10);
+    doc.text("BON DE COMMANDE FOURNISSEUR", 20, 31);
+    
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Commande : #BC-${new Date().getTime().toString().slice(-6)}`, 140, 20);
+    doc.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 140, 26);
+
+    autoTable(doc, {
+      startY: 65,
+      head: [["Information Fournisseur", "Détail"]],
+      body: [
+        ["Fournisseur", supp.name || ""],
+        ["Téléphone", supp.phone || "N/A"],
+        ["Email", supp.email || "N/A"],
+        ["Adresse / Ville", `${supp.address || ''} ${supp.city || ''}`.trim() || "N/A"],
+      ],
+      theme: "striped",
+      headStyles: { fillColor: [30, 41, 59] },
+    });
+
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable?.finalY + 15,
+      head: [["Réf", "Désignation", "Qté", "P.U. HT", "Remise %", "TVA %", "Total TTC"]],
+      body: items.map((it: any) => {
+        const net = it.unitPrice * (1 - it.discount / 100);
+        const ttc = net * (1 + it.tva / 100);
+        return [
+          it.reference || "N/A",
+          it.designation,
+          it.quantity.toString(),
+          it.unitPrice.toFixed(3),
+          `${it.discount}%`,
+          `${it.tva}%`,
+          (it.quantity * ttc).toFixed(3)
+        ];
+      }),
+      theme: "grid",
+      headStyles: { fillColor: [30, 41, 59] },
+    });
+
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable?.finalY + 10,
+      body: [
+        ["TOTAL BRUT HT", `${subtotalHT.toFixed(3)} TND`],
+        ["TOTAL REMISE", `-${totalDiscount.toFixed(3)} TND`],
+        ["TOTAL NET HT", `${totalHTNet.toFixed(3)} TND`],
+        ["TOTAL TVA", `${totalTva.toFixed(3)} TND`],
+        ["TOTAL TTC", `${totalTTC.toFixed(3)} TND`],
+      ],
+      theme: "plain",
+      styles: { halign: "right", fontStyle: "bold" },
+    });
+
+    doc.save(`Bon_Commande_${supp.name.replace(/\s+/g, '_')}.pdf`);
+  };
+
+  // Excel/CSV download for PO
+  const handleDownloadPO_Excel = () => {
+    const supp = suppliers.find(s => s.id === selectedSupplier);
+    if (!supp) { alert("VEUILLEZ SÉLECTIONNER UN FOURNISSEUR"); return; }
+
+    let csv = "REFERENCE;DESIGNATION;QUANTITE;PRIX UNITAIRE HT;REMISE %;TVA %;TOTAL TTC\n";
+    items.forEach((it: any) => {
+      const net = it.unitPrice * (1 - it.discount / 100);
+      const ttc = net * (1 + it.tva / 100);
+      csv += `${it.reference || "N/A"};${it.designation};${it.quantity};${it.unitPrice.toFixed(3)};${it.discount};${it.tva};${(it.quantity * ttc).toFixed(3)}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", `Bon_Commande_${supp.name.replace(/\s+/g, '_')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const supplier = suppliers.find(s => s.id === selectedSupplier);
@@ -636,12 +799,17 @@ function SectionConsultationFournisseur() {
     setSelectedSuppIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
-  const handlePriceChange = (suppId: string, itemIdx: number, val: number) => {
+  const handlePriceChange = (suppId: string, itemIdx: number, field: 'price' | 'discount', val: number) => {
     setCompPrices(prev => ({
       ...prev,
       [suppId]: {
         ...(prev[suppId] || {}),
-        [itemIdx]: val
+        [itemIdx]: {
+          price: 0,
+          discount: 0,
+          ...(prev[suppId]?.[itemIdx] || {}),
+          [field]: val
+        }
       }
     }));
   };
@@ -651,7 +819,8 @@ function SectionConsultationFournisseur() {
     let minPrice = Infinity;
     let bestSuppId = '';
     selectedSuppIds.forEach(id => {
-      const p = compPrices[id]?.[itemIdx] || 0;
+      const obj = compPrices[id]?.[itemIdx] || { price: 0, discount: 0 };
+      const p = obj.price * (1 - obj.discount / 100);
       if (p > 0 && p < minPrice) {
         minPrice = p;
         bestSuppId = id;
@@ -665,12 +834,17 @@ function SectionConsultationFournisseur() {
     if (!supp) return;
 
     setSelectedSupplier(suppId);
-    setItems(compItems.map((item, idx) => ({
-      reference: item.reference,
-      designation: item.designation,
-      quantity: item.quantity,
-      unitPrice: compPrices[suppId]?.[idx] || 0
-    })));
+    setItems(compItems.map((item, idx) => {
+      const obj = compPrices[suppId]?.[idx] || { price: 0, discount: 0 };
+      return {
+        reference: item.reference,
+        designation: item.designation,
+        quantity: item.quantity,
+        unitPrice: obj.price,
+        discount: obj.discount,
+        tva: 19
+      };
+    }));
     setNotes(`Généré à partir du tableau comparatif. Meilleur prix fournisseur.`);
     setActiveTab('order');
     alert(`✅ ARTICLES CHARGÉS DANS L'ONGLET BON DE COMMANDE POUR : ${supp.name.toUpperCase()}`);
@@ -759,45 +933,62 @@ function SectionConsultationFournisseur() {
                     <th className="px-3 py-2.5 text-left">DÉSIGNATION *</th>
                     <th className="px-3 py-2.5 text-center">QTÉ</th>
                     <th className="px-3 py-2.5 text-right">P.U. HT (TND)</th>
-                    <th className="px-3 py-2.5 text-right">TOTAL</th>
+                    <th className="px-3 py-2.5 text-right">REMISE %</th>
+                    <th className="px-3 py-2.5 text-right">TVA %</th>
+                    <th className="px-3 py-2.5 text-right">TOTAL TTC</th>
                     <th className="px-3 py-2.5 rounded-r-lg"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((it, i) => (
-                    <tr key={i} className="border-b border-slate-800/50">
-                      <td className="px-2 py-2">
-                        <input type="text" value={it.reference} onChange={e => updateItem(i, 'reference', e.target.value)}
-                          className="w-full bg-white text-black font-bold text-xs px-2 py-1.5 rounded border border-slate-300 focus:outline-none uppercase min-w-[90px]" placeholder="RÉF." />
-                      </td>
-                      <td className="px-2 py-2">
-                        <input type="text" value={it.designation} onChange={e => updateItem(i, 'designation', e.target.value)}
-                          className="w-full bg-white text-black font-bold text-xs px-2 py-1.5 rounded border border-slate-300 focus:outline-none uppercase min-w-[160px]" placeholder="DÉSIGNATION ARTICLE" />
-                      </td>
-                      <td className="px-2 py-2">
-                        <input type="number" value={it.quantity} min={1} onChange={e => updateItem(i, 'quantity', parseInt(e.target.value) || 1)}
-                          className="w-14 bg-white text-black font-bold text-xs px-2 py-1.5 rounded border border-slate-300 focus:outline-none text-center" />
-                      </td>
-                      <td className="px-2 py-2">
-                        <input type="number" value={it.unitPrice} min={0} step={0.01} onChange={e => updateItem(i, 'unitPrice', parseFloat(e.target.value) || 0)}
-                          className="w-24 bg-white text-black font-bold text-xs px-2 py-1.5 rounded border border-slate-300 focus:outline-none text-right" />
-                      </td>
-                      <td className="px-2 py-2 text-right font-black text-cyan-400">{(it.quantity * it.unitPrice).toFixed(2)} TND</td>
-                      <td className="px-2 py-2 text-center">
-                        <button onClick={() => removeLine(i)} className="text-slate-500 hover:text-red-400 p-1 transition">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {items.map((it, i) => {
+                    const net = it.unitPrice * (1 - it.discount / 100);
+                    const lineTTC = net * (1 + it.tva / 100) * it.quantity;
+                    return (
+                      <tr key={i} className="border-b border-slate-800/50">
+                        <td className="px-2 py-2">
+                          <input type="text" value={it.reference} onChange={e => updateItem(i, 'reference', e.target.value)}
+                            className="w-full bg-white text-black font-bold text-xs px-2 py-1.5 rounded border border-slate-300 focus:outline-none uppercase min-w-[90px]" placeholder="RÉF." />
+                        </td>
+                        <td className="px-2 py-2">
+                          <input type="text" value={it.designation} onChange={e => updateItem(i, 'designation', e.target.value)}
+                            className="w-full bg-white text-black font-bold text-xs px-2 py-1.5 rounded border border-slate-300 focus:outline-none uppercase min-w-[160px]" placeholder="DÉSIGNATION" />
+                        </td>
+                        <td className="px-2 py-2">
+                          <input type="number" value={it.quantity} min={1} onChange={e => updateItem(i, 'quantity', parseInt(e.target.value) || 1)}
+                            className="w-14 bg-white text-black font-bold text-xs px-2 py-1.5 rounded border border-slate-300 focus:outline-none text-center" />
+                        </td>
+                        <td className="px-2 py-2">
+                          <input type="number" value={it.unitPrice} min={0} step={0.001} onChange={e => updateItem(i, 'unitPrice', parseFloat(e.target.value) || 0)}
+                            className="w-24 bg-white text-black font-bold text-xs px-2 py-1.5 rounded border border-slate-300 focus:outline-none text-right" placeholder="0.000" />
+                        </td>
+                        <td className="px-2 py-2">
+                          <input type="number" value={it.discount} min={0} max={100} onChange={e => updateItem(i, 'discount', parseFloat(e.target.value) || 0)}
+                            className="w-16 bg-white text-black font-bold text-xs px-2 py-1.5 rounded border border-slate-300 focus:outline-none text-center" placeholder="0" />
+                        </td>
+                        <td className="px-2 py-2">
+                          <input type="number" value={it.tva} min={0} max={100} onChange={e => updateItem(i, 'tva', parseFloat(e.target.value) || 19)}
+                            className="w-16 bg-white text-black font-bold text-xs px-2 py-1.5 rounded border border-slate-300 focus:outline-none text-center" placeholder="19" />
+                        </td>
+                        <td className="px-2 py-2 text-right font-black text-cyan-400">{lineTTC.toFixed(3)} TND</td>
+                        <td className="px-2 py-2 text-center">
+                          <button onClick={() => removeLine(i)} className="text-slate-500 hover:text-red-400 p-1 transition">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
             <div className="flex justify-end mt-3 pt-3 border-t border-slate-800">
-              <div className="text-right">
-                <span className="text-slate-400 uppercase text-xs font-bold">TOTAL BON DE COMMANDE : </span>
-                <span className="text-amber-400 font-black text-lg ml-2">{totalAmount.toFixed(2)} TND HT</span>
+              <div className="text-right space-y-1 text-xs">
+                <p className="text-slate-450 uppercase font-bold">TOTAL BRUT HT : <span className="text-white font-mono font-black ml-2">{subtotalHT.toFixed(3)} TND</span></p>
+                <p className="text-red-400 uppercase font-bold">TOTAL REMISE : <span className="font-mono font-black ml-2">-{totalDiscount.toFixed(3)} TND</span></p>
+                <p className="text-slate-450 uppercase font-bold">TOTAL NET HT : <span className="text-white font-mono font-black ml-2">{totalHTNet.toFixed(3)} TND</span></p>
+                <p className="text-slate-450 uppercase font-bold">TOTAL TVA : <span className="text-white font-mono font-black ml-2">{totalTva.toFixed(3)} TND</span></p>
+                <p className="text-amber-450 uppercase font-black text-base border-t border-slate-800 pt-1.5 mt-1.5">TOTAL TTC : <span className="font-mono ml-2">{totalTTC.toFixed(3)} TND</span></p>
               </div>
             </div>
           </div>
@@ -810,15 +1001,20 @@ function SectionConsultationFournisseur() {
           </div>
 
           <div className="flex gap-2 flex-wrap">
-            <button onClick={handlePrint}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-[11px] font-black uppercase border border-slate-700 transition"
+            <button onClick={handleDownloadPO_PDF} disabled={!selectedSupplier}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[11px] font-black uppercase transition disabled:opacity-50 font-sans"
             >
-              <Printer className="w-3.5 h-3.5" /> IMPRIMER BON DE COMMANDE
+              <Download className="w-3.5 h-3.5" /> TÉLÉCHARGER PO (PDF)
+            </button>
+            <button onClick={handleDownloadPO_Excel} disabled={!selectedSupplier}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-[11px] font-black uppercase transition disabled:opacity-50 font-sans"
+            >
+              <Download className="w-3.5 h-3.5" /> TÉLÉCHARGER PO (EXCEL)
             </button>
             <button onClick={handleCreateOrder} disabled={saving}
-              className="flex items-center gap-1.5 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-[11px] font-black uppercase transition disabled:opacity-50"
+              className="flex items-center gap-1.5 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-[11px] font-black uppercase transition disabled:opacity-50"
             >
-              <Save className="w-3.5 h-3.5" /> {saving ? 'CRÉATION...' : 'CRÉER & ENREGISTRER BON DE COMMANDE'}
+              <Save className="w-3.5 h-3.5" /> {saving ? 'CRÉATION...' : 'CRÉER & ENREGISTRER PO'}
             </button>
           </div>
         </div>
@@ -904,25 +1100,34 @@ function SectionConsultationFournisseur() {
                       if (!it.designation) return null;
                       const { minPrice, bestSuppId } = getLowestPriceInfo(idx);
                       return (
-                        <tr key={idx} className="border-b border-slate-850 hover:bg-slate-950/10">
+                        <tr key={idx} className="border-b border-slate-855 hover:bg-slate-950/10">
                           <td className="px-4 py-3">
                             <span className="font-bold text-white uppercase">{it.designation}</span>
                             {it.reference && <span className="block text-[10px] text-slate-400">REF: {it.reference.toUpperCase()}</span>}
                           </td>
                           {selectedSuppIds.map(id => {
-                            const val = compPrices[id]?.[idx] || '';
+                            const valObj = compPrices[id]?.[idx] || { price: 0, discount: 0 };
                             const isCheapest = bestSuppId === id && minPrice !== null;
                             return (
                               <td key={id} className={`px-4 py-3 text-center transition ${isCheapest ? 'bg-green-500/10' : ''}`}>
-                                <div className="flex items-center gap-1 justify-center">
-                                  <input type="number" min={0} step={0.01} value={val} onChange={e => handlePriceChange(id, idx, parseFloat(e.target.value) || 0)} className="w-20 bg-white text-black font-bold text-center text-xs px-1.5 py-1 rounded border border-slate-350 focus:outline-none" placeholder="0.00" />
-                                  <span className="text-[10px] text-slate-450 font-bold">DT</span>
+                                <div className="flex flex-col gap-1 items-center justify-center">
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-[9px] text-slate-500 font-bold uppercase">P.U.</span>
+                                    <input type="number" min={0} step={0.001} value={valObj.price || ''} onChange={e => handlePriceChange(id, idx, 'price', parseFloat(e.target.value) || 0)} className="w-20 bg-white text-black font-bold text-center text-xs px-1.5 py-1 rounded border border-slate-350 focus:outline-none" placeholder="0.000" />
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-[9px] text-slate-500 font-bold uppercase">REM%</span>
+                                    <input type="number" min={0} max={100} step={1} value={valObj.discount || ''} onChange={e => handlePriceChange(id, idx, 'discount', parseFloat(e.target.value) || 0)} className="w-20 bg-white text-black font-bold text-center text-xs px-1.5 py-1 rounded border border-slate-350 focus:outline-none" placeholder="0%" />
+                                  </div>
+                                  {valObj.price > 0 && (
+                                    <span className="text-[9px] text-cyan-400 font-mono font-bold mt-0.5">NET: {(valObj.price * (1 - valObj.discount / 100)).toFixed(3)} DT</span>
+                                  )}
                                 </div>
                               </td>
                             );
                           })}
                           <td className="px-4 py-3 text-right font-black text-green-400 text-sm">
-                            {minPrice ? `${minPrice.toFixed(2)} TND` : '-'}
+                            {minPrice ? `${minPrice.toFixed(3)} TND` : '-'}
                             {minPrice && (
                               <span className="block text-[9px] text-slate-450 uppercase font-sans">
                                 PAR: {suppliers.find(x => x.id === bestSuppId)?.name}
@@ -935,15 +1140,16 @@ function SectionConsultationFournisseur() {
 
                     {/* Ligne Totaux par Fournisseur */}
                     <tr className="bg-slate-950/60 font-black border-t border-slate-800">
-                      <td className="px-4 py-3.5 text-slate-400 uppercase text-[10px]">TOTAL DE LA CONSULTATION</td>
+                      <td className="px-4 py-3.5 text-slate-450 uppercase text-[10px]">TOTAL DE LA CONSULTATION</td>
                       {selectedSuppIds.map(id => {
                         const total = compItems.reduce((sum, it, idx) => {
-                          const price = compPrices[id]?.[idx] || 0;
+                          const obj = compPrices[id]?.[idx] || { price: 0, discount: 0 };
+                          const price = obj.price * (1 - obj.discount / 100);
                           return sum + (it.quantity * price);
                         }, 0);
                         return (
                           <td key={id} className="px-4 py-3.5 text-center text-sm text-cyan-400">
-                            {total.toFixed(2)} TND
+                            {total.toFixed(3)} TND
                             <button onClick={() => handleGeneratePOFromComparison(id)} className="block mx-auto mt-2 px-2.5 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-[8px] uppercase tracking-wide transition font-black">
                               Commander chez lui
                             </button>
@@ -1379,6 +1585,172 @@ function SectionGestionArticles() {
   );
 }
 
+// ─── SECTION: DEVIS GÉNÉRÉS (HISTORIQUE ET TÉLÉCHARGEMENT) ───────────────────
+function SectionDevisGeneres() {
+  const [devisList, setDevisList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  const fetchDevis = () => {
+    setLoading(true);
+    fetch('/api/devis').then(r => r.json()).then(d => {
+      if (Array.isArray(d)) {
+        setDevisList(d);
+      } else if (d.success && Array.isArray(d.data)) {
+        setDevisList(d.data);
+      }
+    }).finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchDevis();
+  }, []);
+
+  const handleDownloadPDF = async (devis: any) => {
+    const { jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+    const doc = new jsPDF();
+
+    doc.setFillColor(30, 41, 59);
+    doc.rect(0, 0, 210, 40, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(22);
+    doc.text("AUTOP TUNISIE", 20, 24);
+    doc.setFontSize(10);
+    doc.text("PROPOSITION COMMERCIALE / DEVIS", 20, 31);
+    
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Devis : #DEV-${devis.id.slice(-6).toUpperCase()}`, 140, 20);
+    doc.text(`Date : ${new Date(devis.createdAt).toLocaleDateString('fr-FR')}`, 140, 26);
+
+    autoTable(doc, {
+      startY: 65,
+      head: [["Information Client", "Détail"]],
+      body: [
+        ["Email du Client", devis.clientEmail || ""],
+        ["Véhicule", `${devis.vehicleBrand || ''} ${devis.vehicleModel || ''}`.trim() || "Générique"],
+        ["Numéro VIN", devis.vehicleVin || "N/A"],
+        ["Notes / Observations", devis.notes || "N/A"],
+      ],
+      theme: "striped",
+      headStyles: { fillColor: [30, 41, 59] },
+    });
+
+    const subtotal = devis.items?.reduce((sum: number, it: any) => sum + (it.price * it.quantity), 0) || 0;
+    const tax = subtotal * 0.19;
+    const totalTTC = devis.totalPrice || (subtotal + tax);
+
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable?.finalY + 15,
+      head: [["Réf. pièce", "Désignation", "Quantité", "P.U. HT (TND)", "Total HT (TND)"]],
+      body: devis.items?.map((it: any) => [
+        it.reference || "N/A",
+        it.name,
+        it.quantity.toString(),
+        it.price.toFixed(3),
+        (it.price * it.quantity).toFixed(3)
+      ]) || [],
+      theme: "grid",
+      headStyles: { fillColor: [30, 41, 59] },
+    });
+
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable?.finalY + 10,
+      body: [
+        ["TOTAL HT", `${subtotal.toFixed(3)} TND`],
+        ["TVA (19%)", `${tax.toFixed(3)} TND`],
+        ["TOTAL TTC", `${totalTTC.toFixed(3)} TND`],
+      ],
+      theme: "plain",
+      styles: { halign: "right", fontStyle: "bold" },
+    });
+
+    doc.save(`Devis_AUTOP_${devis.id.slice(-6).toUpperCase()}.pdf`);
+  };
+
+  const handleDownloadExcel = (devis: any) => {
+    let csv = "REFERENCE;DESIGNATION;QUANTITE;PRIX UNITAIRE HT;TOTAL HT\n";
+    devis.items?.forEach((it: any) => {
+      csv += `${it.reference || "N/A"};${it.name};${it.quantity};${it.price.toFixed(3)};${(it.price * it.quantity).toFixed(3)}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", `Devis_AUTOP_${devis.id.slice(-6).toUpperCase()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const filtered = devisList.filter(d =>
+    d.clientEmail?.toLowerCase().includes(search.toLowerCase()) ||
+    d.vehicleBrand?.toLowerCase().includes(search.toLowerCase()) ||
+    d.vehicleModel?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div>
+      <h2 className="text-xl font-black uppercase tracking-widest text-white mb-1 flex items-center gap-2">
+        <FileText className="w-5 h-5 text-red-400" /> DEVIS GÉNÉRÉS & TRAITÉS
+      </h2>
+      <p className="text-slate-400 text-xs uppercase tracking-wider mb-5">CONSULTEZ ET EXPÉDIEZ VOS DEVIS DÉJÀ CHIFFRÉS</p>
+
+      <div className="flex gap-2 mb-5">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input type="text" placeholder="RECHERCHER PAR EMAIL CLIENT, VEHICULE..."
+            value={search} onChange={e => setSearch(e.target.value)}
+            className="w-full bg-white text-black font-semibold pl-10 pr-4 py-2.5 rounded-xl text-sm border border-slate-300 focus:outline-none focus:border-red-500 uppercase placeholder:normal-case placeholder:font-normal" />
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-10 text-slate-500 font-bold uppercase">CHARGEMENT DES DEVIS...</div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-10 text-slate-600 font-bold uppercase">AUCUN DEVIS TROUVÉ</div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {filtered.map(d => (
+            <div key={d.id} className={cardCls}>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 pb-4 border-b border-slate-800/40">
+                <div>
+                  <span className="font-mono text-amber-400 font-black text-sm uppercase">#DEV-{d.id.slice(-6).toUpperCase()}</span>
+                  <h4 className="font-black text-white uppercase text-sm mt-0.5">{d.clientEmail}</h4>
+                  <p className="text-[10px] text-slate-400 mt-0.5 font-sans">VÉHICULE: {d.vehicleBrand?.toUpperCase()} {d.vehicleModel?.toUpperCase()} · CRÉÉ LE: {new Date(d.createdAt).toLocaleDateString('fr-FR')}</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] text-slate-400 block uppercase font-bold">MONTANT TOTAL TTC</span>
+                  <span className="font-black text-white text-base font-mono">{(d.totalPrice || 0).toFixed(3)} TND</span>
+                </div>
+              </div>
+
+              {/* Items */}
+              <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/60 mb-4 text-xs">
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">ARTICLES DU DEVIS :</span>
+                {d.items?.map((item: any, idx: number) => (
+                  <div key={item.id || idx} className="flex justify-between items-center border-b border-slate-800/20 pb-1.5 last:border-0 last:pb-0 mb-1.5 last:mb-0">
+                    <span className="text-slate-355 uppercase font-bold">{item.name} {item.reference && `(${item.reference.toUpperCase()})`}</span>
+                    <span className="font-black text-slate-400 font-mono">x{item.quantity} | {item.price.toFixed(3)} TND</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                <button onClick={() => handleDownloadPDF(d)} className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase rounded-xl transition">
+                  <Download className="w-3.5 h-3.5" /> PDF
+                </button>
+                <button onClick={() => handleDownloadExcel(d)} className="flex items-center gap-1.5 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-black uppercase rounded-xl transition">
+                  <Download className="w-3.5 h-3.5" /> EXCEL / CSV
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── SECTION: SUIVI DES BONS DE COMMANDE ET LIVRAISONS ───────────────────────
 function SectionBonsEtLivraisons() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -1475,7 +1847,7 @@ function SectionBonsEtLivraisons() {
               </div>
               <div className="text-right">
                 <span className="text-[10px] text-slate-400 block uppercase font-bold">MONTANT TOTAL TTC</span>
-                <span className="font-black text-white text-base font-mono">{o.total.toFixed(2)} TND</span>
+                <span className="font-black text-white text-base font-mono">{o.total.toFixed(3)} TND</span>
               </div>
             </div>
 
@@ -1485,7 +1857,7 @@ function SectionBonsEtLivraisons() {
               {o.items?.map((item: any) => (
                 <div key={item.id} className="flex justify-between items-center border-b border-slate-800/20 pb-1.5 last:border-0 last:pb-0 mb-1.5 last:mb-0">
                   <span className="text-slate-350 uppercase font-bold">{item.productName}</span>
-                  <span className="font-black text-slate-400 font-mono">x{item.quantity} | {item.price.toFixed(2)} TND</span>
+                  <span className="font-black text-slate-400 font-mono">x{item.quantity} | {item.price.toFixed(3)} TND</span>
                 </div>
               ))}
             </div>
@@ -1591,11 +1963,11 @@ export default function AdminContent() {
   const sectionMap: Record<string, React.ReactNode> = {
     'reception': <SectionReception onTreatQuote={(q) => { setSelectedQuote(q); setAdminSection('creer-devis'); }} />,
     'traitement': <SectionReception onTreatQuote={(q) => { setSelectedQuote(q); setAdminSection('creer-devis'); }} />,
-    'devis-gen': <SectionCreerDevis quoteToLoad={selectedQuote} onClearQuote={() => setSelectedQuote(null)} />,
+    'devis-gen': <SectionDevisGeneres />,
     'bons': <SectionBonsEtLivraisons />,
     'creer-devis': <SectionCreerDevis quoteToLoad={selectedQuote} onClearQuote={() => setSelectedQuote(null)} />,
-    'generer-pdf': <SectionCreerDevis quoteToLoad={selectedQuote} onClearQuote={() => setSelectedQuote(null)} />,
-    'envoi': <SectionCreerDevis quoteToLoad={selectedQuote} onClearQuote={() => setSelectedQuote(null)} />,
+    'generer-pdf': <SectionDevisGeneres />,
+    'envoi': <SectionDevisGeneres />,
     'ajouter-fournisseur': <SectionAjouterFournisseur />,
     'liste-fournisseurs': <SectionListeFournisseurs />,
     'consultation-fournisseur': <SectionConsultationFournisseur />,

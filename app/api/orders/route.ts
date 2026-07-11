@@ -95,9 +95,13 @@ export async function POST(req: NextRequest) {
     const tax = (subtotal + shippingCost) * (taxRate / 100);
     const total = subtotal + shippingCost + tax;
 
+    const orderCount = await prisma.order.count();
+    const nextNumber = String(orderCount + 1).padStart(6, '0');
+    const orderNumber = `CMD-${nextNumber}`;
+
     const order = await prisma.order.create({
       data: {
-        orderNumber: generateOrderNumber(),
+        orderNumber,
         userId,
         shippingAddress: body.shippingAddress,
         billingAddress: body.billingAddress || body.shippingAddress,
