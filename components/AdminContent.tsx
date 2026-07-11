@@ -8,7 +8,7 @@ import {
   Plus, Trash2, Save, X, Send,
   Building2, UserPlus, List, ClipboardList, Package,
   CheckCircle, AlertTriangle, Printer,
-  ShoppingBag, BarChart2
+  ShoppingBag, BarChart2, Download
 } from 'lucide-react';
 
 // ─── Input style helper ───────────────────────────────────────────────────────
