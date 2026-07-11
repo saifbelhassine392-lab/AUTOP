@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
 
     const user = session.user as any;
     const body = await req.json();
-    const { devisId, selectedFormat, fileBase64, fileName, shippingAddress, customerNote } = body;
+    const { devisId, selectedFormat, fileBase64, fileName, shippingAddress, customerNote, modifiedItems } = body;
 
     if (!devisId) {
       return NextResponse.json({ success: false, error: 'ID Devis manquant' }, { status: 400 });
@@ -29,8 +29,45 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Devis introuvable' }, { status: 404 });
     }
 
-    // Créer la commande
-    const subtotal = devis.totalPrice || devis.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    // Calculer le total et préparer les articles de la commande
+    let subtotal = 0;
+    let orderItemsData = [];
+
+    if (modifiedItems && Array.isArray(modifiedItems) && modifiedItems.length > 0) {
+      subtotal = modifiedItems.reduce((sum: number, item: any) => {
+        const itemPrice = parseFloat(item.price) || 0;
+        const itemQuantity = parseInt(item.quantity) || 1;
+        const itemDiscount = parseFloat(item.discount) || 0;
+        const itemTotal = itemPrice * itemQuantity * (1 - itemDiscount / 100);
+        return sum + itemTotal;
+      }, 0);
+
+      orderItemsData = modifiedItems.map((item: any) => {
+        const itemPrice = parseFloat(item.price) || 0;
+        const itemQuantity = parseInt(item.quantity) || 1;
+        const itemDiscount = parseFloat(item.discount) || 0;
+        const itemTotal = itemPrice * itemQuantity * (1 - itemDiscount / 100);
+        return {
+          productId: item.productId || '',
+          productName: item.name,
+          sku: 'DEVIS-PU',
+          price: itemPrice,
+          quantity: itemQuantity,
+          total: itemTotal
+        };
+      });
+    } else {
+      subtotal = devis.totalPrice || devis.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      orderItemsData = devis.items.map(item => ({
+        productId: item.productId || '',
+        productName: item.name,
+        sku: 'DEVIS-PU',
+        price: item.price,
+        quantity: item.quantity,
+        total: item.price * item.quantity
+      }));
+    }
+
     const tax = subtotal * 0.19; // 19% TVA tunisienne
     const total = subtotal + tax;
 
@@ -47,14 +84,7 @@ export async function POST(req: NextRequest) {
         total,
         customerNote: customerNote || `Commande générée à partir du Devis #${devisId.slice(-6).toUpperCase()}`,
         items: {
-          create: devis.items.map(item => ({
-            productId: item.productId || '',
-            productName: item.name,
-            sku: 'DEVIS-PU',
-            price: item.price,
-            quantity: item.quantity,
-            total: item.price * item.quantity
-          }))
+          create: orderItemsData
         },
         statusHistory: {
           create: {

@@ -8,6 +8,16 @@
   }
   body {
     @apply bg-[#0a0e1a] text-slate-100 antialiased;
+    text-transform: uppercase;
+  }
+  input[type="password"] {
+    text-transform: none;
+  }
+  a[href^="mailto:"], .lowercase {
+    text-transform: lowercase !important;
+  }
+  .normal-case {
+    text-transform: none !important;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-bold tracking-tight;

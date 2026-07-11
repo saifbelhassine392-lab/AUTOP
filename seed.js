@@ -312,7 +312,7 @@ async function main() {
   const settings = [
     { key: 'site_name', value: 'AUTOP', group: 'general' },
     { key: 'site_description', value: 'Votre partenaire pièces auto depuis 2024', group: 'general' },
-    { key: 'contact_email', value: 'contact@autop.fr', group: 'general' },
+    { key: 'contact_email', value: 'contact@autop.tn', group: 'general' },
     { key: 'contact_phone', value: '+33 1 23 45 67 89', group: 'general' },
     { key: 'shipping_free_threshold', value: '99.00', group: 'shipping' },
     { key: 'shipping_standard_cost', value: '7.90', group: 'shipping' },

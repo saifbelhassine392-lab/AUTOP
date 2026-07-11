@@ -22,7 +22,7 @@ export async function sendEmail({ to, subject, html, from, attachments }: EmailO
 
   try {
     const { data, error } = await resend.emails.send({
-      from: from || process.env.EMAIL_FROM || 'AUTOP <contact@autop.fr>',
+      from: from || process.env.EMAIL_FROM || 'AUTOP <contact@autop.tn>',
       to: Array.isArray(to) ? to : [to],
       subject,
       html,
