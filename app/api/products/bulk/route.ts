@@ -21,20 +21,26 @@ export async function POST(req: NextRequest) {
     }
 
     for (const prod of products) {
+      const reference = String(prod.reference || '').trim();
+      if (!reference) continue;
+
       const price = parseFloat(prod.sellingPrice) || 0;
-      const oldPrice = parseFloat(prod.costPrice) || 0;
-      const reference = prod.reference;
+      const costPrice = parseFloat(prod.costPrice) || 0;
       const name = prod.designation || 'Article ' + reference;
-      const slug = slugify(name) + '-' + reference;
-      const stock = parseInt(prod.stockQty) || 5;
+      const slug = slugify(name) + '-' + reference + '-' + Date.now().toString().slice(-4);
+      const stock = parseInt(prod.stock) || 0;
+      const brand = prod.brand || '';
+      const vehicleCompat = prod.vehicleCompat || '';
 
       await prisma.product.upsert({
         where: { reference },
         update: {
           name,
           price,
-          oldPrice,
+          costPrice,
           stock,
+          brand,
+          vehicleCompat,
         },
         create: {
           reference,
@@ -42,8 +48,10 @@ export async function POST(req: NextRequest) {
           name,
           slug,
           price,
-          oldPrice,
+          costPrice,
           stock,
+          brand,
+          vehicleCompat,
           status: 'ACTIVE',
           categoryId: category.id,
         },
