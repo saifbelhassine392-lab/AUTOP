@@ -7,7 +7,7 @@ import {
   Search, Edit3, FileText, Mail, Phone,
   Plus, Trash2, Save, X, Send,
   Building2, UserPlus, List, ClipboardList, Package,
-  CheckCircle, AlertTriangle, Printer,
+  CheckCircle, AlertTriangle, Printer, Clock,
   ShoppingBag, BarChart2, Download
 } from 'lucide-react';
 
@@ -377,6 +377,14 @@ function SectionCreerDevis({ quoteToLoad, onClearQuote }: SectionCreerDevisProps
                           ))}
                         </div>
                       )}
+                      {it.reference && (() => {
+                        const match = catalogue.find(x => x.reference?.toUpperCase() === it.reference?.toUpperCase());
+                        return match ? (
+                          <span className="text-[9px] text-green-400 font-black block mt-0.5 uppercase tracking-wider">✓ DISPO (STOCK: {match.stock})</span>
+                        ) : (
+                          <span className="text-[9px] text-amber-500 font-black block mt-0.5 uppercase tracking-wider">⚡ NOUVEAU (SERA CRÉÉ)</span>
+                        );
+                      })()}
                     </td>
                     <td className="px-2 py-2">
                       <input type="number" value={it.qty} min={1} onChange={e => updateLine(i, 'qty', parseFloat(e.target.value) || 1)}
@@ -716,8 +724,21 @@ function SectionConsultationFournisseur() {
   // Prices mapping: { [supplierId]: { [itemIndex]: { price: number, discount: number } } }
   const [compPrices, setCompPrices] = useState<Record<string, Record<number, { price: number, discount: number }>>>({});
 
+  const [catalogue, setCatalogue] = useState<any[]>([]);
+  const [activeSuggestRow, setActiveSuggestRow] = useState<number | null>(null);
+  const [activeSuggestField, setActiveSuggestField] = useState<'ref' | 'desc' | null>(null);
+
+  const getSuggestions = (text: string, field: 'ref' | 'desc') => {
+    if (!text || text.length < 1) return [];
+    return catalogue.filter(p => {
+      const target = field === 'ref' ? p.reference : p.name;
+      return target?.toLowerCase().includes(text.toLowerCase());
+    }).slice(0, 8);
+  };
+
   useEffect(() => {
     fetch('/api/suppliers').then(r => r.json()).then(d => setSuppliers(d.data || []));
+    fetch('/api/products').then(r => r.json()).then(d => setCatalogue(Array.isArray(d) ? d : d.data || []));
   }, []);
 
   const addLine = () => setItems(p => [...p, { reference: '', designation: '', quantity: 1, unitPrice: 0, discount: 0, tva: 19 }]);
@@ -1008,13 +1029,69 @@ function SectionConsultationFournisseur() {
                     const lineTTC = net * (1 + it.tva / 100) * it.quantity;
                     return (
                       <tr key={i} className="border-b border-slate-800/50">
-                        <td className="px-2 py-2">
-                          <input type="text" value={it.reference} onChange={e => updateItem(i, 'reference', e.target.value)}
+                        <td className="px-2 py-2 relative">
+                          <input type="text" value={it.reference} 
+                            onChange={e => {
+                              updateItem(i, 'reference', e.target.value);
+                              setActiveSuggestRow(i);
+                              setActiveSuggestField('ref');
+                            }}
+                            onFocus={() => { setActiveSuggestRow(i); setActiveSuggestField('ref'); }}
+                            onBlur={() => setTimeout(() => { setActiveSuggestRow(null); setActiveSuggestField(null); }, 200)}
                             className="w-full bg-white text-black font-bold text-xs px-2 py-1.5 rounded border border-slate-300 focus:outline-none uppercase min-w-[90px]" placeholder="RÉF." />
+                          {activeSuggestRow === i && activeSuggestField === 'ref' && getSuggestions(it.reference, 'ref').length > 0 && (
+                            <div className="absolute left-0 z-50 mt-1 min-w-[220px] bg-slate-950 border border-slate-700 rounded-xl max-h-44 overflow-y-auto shadow-2xl">
+                              {getSuggestions(it.reference, 'ref').map((p: any) => (
+                                <button key={p.id} type="button"
+                                  onClick={() => {
+                                    updateItem(i, 'reference', p.reference || '');
+                                    updateItem(i, 'designation', p.name || '');
+                                    if (p.costPrice) updateItem(i, 'unitPrice', p.costPrice);
+                                    else if (p.price) updateItem(i, 'unitPrice', p.price);
+                                  }}
+                                  className="w-full text-left px-3 py-2 hover:bg-slate-800 text-xs font-semibold text-slate-200 border-b border-slate-900 last:border-0 flex items-center justify-between gap-2">
+                                  <span className="text-red-400 font-mono font-bold shrink-0">{p.reference}</span>
+                                  <span className="text-slate-400 text-[10px] truncate">{p.name}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          {it.reference && (() => {
+                            const match = catalogue.find(x => x.reference?.toUpperCase() === it.reference?.toUpperCase());
+                            return match ? (
+                              <span className="text-[9px] text-green-400 font-black block mt-0.5 uppercase tracking-wider">✓ DISPO (STOCK: {match.stock})</span>
+                            ) : (
+                              <span className="text-[9px] text-amber-500 font-black block mt-0.5 uppercase tracking-wider">⚡ NOUVEAU (SERA CRÉÉ)</span>
+                            );
+                          })()}
                         </td>
-                        <td className="px-2 py-2">
-                          <input type="text" value={it.designation} onChange={e => updateItem(i, 'designation', e.target.value)}
+                        <td className="px-2 py-2 relative">
+                          <input type="text" value={it.designation} 
+                            onChange={e => {
+                              updateItem(i, 'designation', e.target.value);
+                              setActiveSuggestRow(i);
+                              setActiveSuggestField('desc');
+                            }}
+                            onFocus={() => { setActiveSuggestRow(i); setActiveSuggestField('desc'); }}
+                            onBlur={() => setTimeout(() => { setActiveSuggestRow(null); setActiveSuggestField(null); }, 200)}
                             className="w-full bg-white text-black font-bold text-xs px-2 py-1.5 rounded border border-slate-300 focus:outline-none uppercase min-w-[160px]" placeholder="DÉSIGNATION" />
+                          {activeSuggestRow === i && activeSuggestField === 'desc' && getSuggestions(it.designation, 'desc').length > 0 && (
+                            <div className="absolute left-0 z-50 mt-1 min-w-[220px] bg-slate-950 border border-slate-700 rounded-xl max-h-44 overflow-y-auto shadow-2xl">
+                              {getSuggestions(it.designation, 'desc').map((p: any) => (
+                                <button key={p.id} type="button"
+                                  onClick={() => {
+                                    updateItem(i, 'reference', p.reference || '');
+                                    updateItem(i, 'designation', p.name || '');
+                                    if (p.costPrice) updateItem(i, 'unitPrice', p.costPrice);
+                                    else if (p.price) updateItem(i, 'unitPrice', p.price);
+                                  }}
+                                  className="w-full text-left px-3 py-2 hover:bg-slate-800 text-xs font-semibold text-slate-200 border-b border-slate-900 last:border-0 flex items-center justify-between gap-2">
+                                  <span className="text-white truncate max-w-[140px]">{p.name}</span>
+                                  <span className="text-red-400 font-mono text-[9px] shrink-0">{p.reference}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </td>
                         <td className="px-2 py-2">
                           <input type="number" value={it.quantity} min={1} onChange={e => updateItem(i, 'quantity', parseInt(e.target.value) || 1)}
@@ -1121,11 +1198,65 @@ function SectionConsultationFournisseur() {
                 <tbody>
                   {compItems.map((it, i) => (
                     <tr key={i} className="border-b border-slate-800/50">
-                      <td className="px-2 py-2">
-                        <input type="text" value={it.designation} onChange={e => updateCompItem(i, 'designation', e.target.value)} className="w-full bg-white text-black font-bold text-xs px-2 py-1.5 rounded border border-slate-300 focus:outline-none uppercase min-w-[160px]" placeholder="DÉSIGNATION ARTICLE" />
+                      <td className="px-2 py-2 relative">
+                        <input type="text" value={it.designation} 
+                          onChange={e => {
+                            updateCompItem(i, 'designation', e.target.value);
+                            setActiveSuggestRow(i);
+                            setActiveSuggestField('desc');
+                          }} 
+                          onFocus={() => { setActiveSuggestRow(i); setActiveSuggestField('desc'); }}
+                          onBlur={() => setTimeout(() => { setActiveSuggestRow(null); setActiveSuggestField(null); }, 200)}
+                          className="w-full bg-white text-black font-bold text-xs px-2 py-1.5 rounded border border-slate-300 focus:outline-none uppercase min-w-[160px]" placeholder="DÉSIGNATION ARTICLE" />
+                        {activeSuggestRow === i && activeSuggestField === 'desc' && getSuggestions(it.designation, 'desc').length > 0 && (
+                          <div className="absolute left-0 z-50 mt-1 min-w-[220px] bg-slate-950 border border-slate-700 rounded-xl max-h-44 overflow-y-auto shadow-2xl">
+                            {getSuggestions(it.designation, 'desc').map((p: any) => (
+                              <button key={p.id} type="button"
+                                onClick={() => {
+                                  updateCompItem(i, 'reference', p.reference || '');
+                                  updateCompItem(i, 'designation', p.name || '');
+                                }}
+                                className="w-full text-left px-3 py-2 hover:bg-slate-800 text-xs font-semibold text-slate-200 border-b border-slate-900 last:border-0 flex items-center justify-between gap-2">
+                                <span className="text-white truncate max-w-[140px]">{p.name}</span>
+                                <span className="text-red-400 font-mono text-[9px] shrink-0">{p.reference}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </td>
-                      <td className="px-2 py-2">
-                        <input type="text" value={it.reference} onChange={e => updateCompItem(i, 'reference', e.target.value)} className="w-full bg-white text-black font-bold text-xs px-2 py-1.5 rounded border border-slate-300 focus:outline-none uppercase min-w-[90px]" placeholder="RÉF." />
+                      <td className="px-2 py-2 relative">
+                        <input type="text" value={it.reference} 
+                          onChange={e => {
+                            updateCompItem(i, 'reference', e.target.value);
+                            setActiveSuggestRow(i);
+                            setActiveSuggestField('ref');
+                          }} 
+                          onFocus={() => { setActiveSuggestRow(i); setActiveSuggestField('ref'); }}
+                          onBlur={() => setTimeout(() => { setActiveSuggestRow(null); setActiveSuggestField(null); }, 200)}
+                          className="w-full bg-white text-black font-bold text-xs px-2 py-1.5 rounded border border-slate-300 focus:outline-none uppercase min-w-[90px]" placeholder="RÉF." />
+                        {activeSuggestRow === i && activeSuggestField === 'ref' && getSuggestions(it.reference, 'ref').length > 0 && (
+                          <div className="absolute left-0 z-50 mt-1 min-w-[220px] bg-slate-950 border border-slate-700 rounded-xl max-h-44 overflow-y-auto shadow-2xl">
+                            {getSuggestions(it.reference, 'ref').map((p: any) => (
+                              <button key={p.id} type="button"
+                                onClick={() => {
+                                  updateCompItem(i, 'reference', p.reference || '');
+                                  updateCompItem(i, 'designation', p.name || '');
+                                }}
+                                className="w-full text-left px-3 py-2 hover:bg-slate-800 text-xs font-semibold text-slate-200 border-b border-slate-900 last:border-0 flex items-center justify-between gap-2">
+                                <span className="text-red-400 font-mono font-bold shrink-0">{p.reference}</span>
+                                <span className="text-slate-400 text-[10px] truncate">{p.name}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {it.reference && (() => {
+                          const match = catalogue.find(x => x.reference?.toUpperCase() === it.reference?.toUpperCase());
+                          return match ? (
+                            <span className="text-[9px] text-green-400 font-black block mt-0.5 uppercase tracking-wider">✓ DISPO (STOCK: {match.stock})</span>
+                          ) : (
+                            <span className="text-[9px] text-amber-500 font-black block mt-0.5 uppercase tracking-wider">⚡ NOUVEAU (SERA CRÉÉ)</span>
+                          );
+                        })()}
                       </td>
                       <td className="px-2 py-2">
                         <input type="number" value={it.quantity} min={1} onChange={e => updateCompItem(i, 'quantity', parseInt(e.target.value) || 1)} className="w-14 bg-white text-black font-bold text-xs px-2 py-1.5 rounded border border-slate-300 focus:outline-none text-center" />
@@ -2043,18 +2174,230 @@ function SectionTableauBord() {
       </h2>
       <p className="text-slate-400 text-xs uppercase tracking-wider mb-5">VUE D'ENSEMBLE DE VOTRE ACTIVITÉ</p>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="isometric-container grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8 pt-4">
         {cards.map((c, i) => {
           const Icon = c.icon;
           return (
-            <div key={i} className={`bg-gradient-to-br ${c.color} rounded-2xl p-5 text-white shadow-lg`}>
-              <Icon className="w-6 h-6 mb-3 opacity-80" />
-              <div className="text-4xl font-black mb-1">{c.value}</div>
-              <div className="text-[10px] font-bold uppercase tracking-wider opacity-80">{c.label}</div>
+            <div key={i} className={`isometric-card bg-gradient-to-br ${c.color} rounded-3xl p-6 text-white border border-white/10 shadow-2xl relative overflow-hidden backdrop-blur-sm`}>
+              {/* Subtle grid pattern overlay */}
+              <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:10px_10px] pointer-events-none" />
+              <div className="relative z-10">
+                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center mb-4 border border-white/10">
+                  <Icon className="w-5 h-5 opacity-90" />
+                </div>
+                <div className="text-4xl font-black mb-1 tracking-tight">{c.value}</div>
+                <div className="text-[9px] font-extrabold uppercase tracking-widest opacity-85">{c.label}</div>
+              </div>
             </div>
           );
         })}
       </div>
+    </div>
+  );
+}
+
+// ─── SECTION: SUIVI PO & LIVRAISONS ──────────────────────────────────────────
+function SectionSuiviPO() {
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+
+  const fetchOrders = () => {
+    setLoading(true);
+    fetch('/api/purchase-orders')
+      .then(r => r.json())
+      .then(d => {
+        setOrders(Array.isArray(d.data) ? d.data : []);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
+    const confirmMsg = newStatus === 'RECEIVED' 
+      ? "Êtes-vous sûr de marquer cette commande comme livrée ? Cela ajoutera automatiquement les quantités des articles au stock."
+      : "Voulez-vous changer le statut de cette commande ?";
+      
+    if (!confirm(confirmMsg)) return;
+
+    try {
+      const res = await fetch(`/api/purchase-orders/${orderId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("✅ Statut mis à jour avec succès ! Le stock a été ajusté.");
+        fetchOrders();
+        if (selectedOrder?.id === orderId) {
+          setSelectedOrder(data.data);
+        }
+      } else {
+        alert("Erreur: " + data.error);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Une erreur est survenue lors de la mise à jour.");
+    }
+  };
+
+  const statusColors: Record<string, string> = {
+    DRAFT: 'bg-slate-800 text-slate-400 border-slate-700',
+    SENT: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
+    CONFIRMED: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+    RECEIVED: 'bg-green-500/10 text-green-400 border-green-500/30',
+  };
+
+  return (
+    <div>
+      <h2 className="text-xl font-black uppercase tracking-widest text-white mb-1 flex items-center gap-2">
+        <Clock className="w-5 h-5 text-green-400" /> SUIVI PO & LIVRAISONS
+      </h2>
+      <p className="text-slate-400 text-xs uppercase tracking-wider mb-5">SUIVEZ LE STATUT ET LA LIVRAISON DES BONS DE COMMANDE FOURNISSEURS</p>
+
+      <div className={cardCls}>
+        {loading ? (
+          <div className="text-center py-8 text-slate-500 font-bold uppercase animate-pulse">Chargement...</div>
+        ) : orders.length === 0 ? (
+          <div className="text-center py-8 text-slate-600 font-bold uppercase">Aucune commande fournisseur trouvée</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left">
+              <thead>
+                <tr className="bg-slate-950 text-[10px] font-black uppercase text-slate-400">
+                  <th className="px-4 py-3 rounded-l-lg">N° COMMANDE</th>
+                  <th className="px-4 py-3">FOURNISSEUR</th>
+                  <th className="px-4 py-3">DATE</th>
+                  <th className="px-4 py-3 text-right">MONTANT</th>
+                  <th className="px-4 py-3 text-center">STATUT</th>
+                  <th className="px-4 py-3 rounded-r-lg text-center">ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map(o => (
+                  <tr key={o.id} className="border-b border-slate-800/40 hover:bg-slate-800/20 transition-colors">
+                    <td className="px-4 py-3 font-mono font-black text-red-450 text-sm">#{o.orderNumber}</td>
+                    <td className="px-4 py-3 font-black text-white uppercase">{o.supplier?.name}</td>
+                    <td className="px-4 py-3 text-slate-400">{new Date(o.createdAt).toLocaleDateString('fr-FR')}</td>
+                    <td className="px-4 py-3 text-right font-bold text-white">{o.totalAmount.toFixed(3)} TND</td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase border ${statusColors[o.status] || 'bg-slate-800'}`}>
+                        {o.status === 'RECEIVED' ? '✓ LIVRÉ' : o.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center flex items-center justify-center gap-2">
+                      <button 
+                        onClick={() => setSelectedOrder(o)}
+                        className="chrome-gloss px-3 py-1.5 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 border border-slate-700 text-slate-200 text-[10px] font-black uppercase rounded-lg transition"
+                      >
+                        Détails
+                      </button>
+                      {o.status !== 'RECEIVED' ? (
+                        <select 
+                          value={o.status}
+                          onChange={e => handleUpdateStatus(o.id, e.target.value)}
+                          className="bg-slate-950 text-white border border-slate-800 rounded-lg text-[10px] font-black uppercase p-1.5 focus:outline-none focus:border-red-500"
+                        >
+                          <option value="DRAFT">DRAFT</option>
+                          <option value="SENT">SENT</option>
+                          <option value="CONFIRMED">CONFIRMED</option>
+                          <option value="RECEIVED">RECEIVED (LIVRÉ)</option>
+                        </select>
+                      ) : (
+                        <span className="text-[10px] text-green-400 font-black uppercase tracking-wider">STOCK COMPTABILISÉ</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Modal Détails */}
+      {selectedOrder && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-2xl w-full shadow-2xl relative text-slate-100">
+            <button 
+              onClick={() => setSelectedOrder(null)}
+              className="absolute right-4 top-4 text-slate-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-lg font-black text-white uppercase mb-1">Détails Commande #{selectedOrder.orderNumber}</h3>
+            <p className="text-slate-400 text-xs uppercase mb-4">Fournisseur : {selectedOrder.supplier?.name} | Date : {new Date(selectedOrder.createdAt).toLocaleDateString('fr-FR')}</p>
+
+            <div className="overflow-x-auto max-h-60 overflow-y-auto border border-slate-800 rounded-2xl mb-4">
+              <table className="w-full text-xs text-left">
+                <thead>
+                  <tr className="bg-slate-950 text-[10px] font-black text-slate-400 uppercase">
+                    <th className="px-3 py-2">Référence</th>
+                    <th className="px-3 py-2">Désignation</th>
+                    <th className="px-3 py-2 text-center">Qté</th>
+                    <th className="px-3 py-2 text-right">P.U. HT</th>
+                    <th className="px-3 py-2 text-right rounded-r-lg">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedOrder.items?.map((item: any) => (
+                    <tr key={item.id} className="border-b border-slate-800/40">
+                      <td className="px-3 py-2 font-mono text-red-400 font-bold">{item.reference || 'N/A'}</td>
+                      <td className="px-3 py-2 text-white uppercase">{item.designation}</td>
+                      <td className="px-3 py-2 text-center text-slate-300 font-bold">{item.quantity}</td>
+                      <td className="px-3 py-2 text-right text-slate-300">{item.unitPrice.toFixed(3)} TND</td>
+                      <td className="px-3 py-2 text-right text-cyan-400 font-bold">{item.total.toFixed(3)} TND</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex justify-between items-center bg-slate-950 p-4 rounded-2xl border border-slate-800 text-xs">
+              <div>
+                <span className="text-slate-400 font-bold uppercase block text-[10px]">Statut Actuel</span>
+                <span className={`inline-block mt-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase border ${statusColors[selectedOrder.status]}`}>
+                  {selectedOrder.status === 'RECEIVED' ? '✓ LIVRÉ' : selectedOrder.status}
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-slate-400 font-bold uppercase block text-[10px]">Montant Total</span>
+                <span className="text-lg font-black text-amber-450 font-mono">{selectedOrder.totalAmount.toFixed(3)} TND</span>
+              </div>
+            </div>
+
+            {selectedOrder.notes && (
+              <div className="mt-3 p-3 bg-slate-800/50 rounded-xl border border-slate-800 text-slate-300 text-xs normal-case">
+                <strong>Notes:</strong> {selectedOrder.notes}
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-end gap-2">
+              {selectedOrder.status !== 'RECEIVED' && (
+                <button 
+                  onClick={() => {
+                    handleUpdateStatus(selectedOrder.id, 'RECEIVED');
+                  }}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-black uppercase rounded-xl transition"
+                >
+                  ✓ Marquer comme Livré
+                </button>
+              )}
+              <button 
+                onClick={() => setSelectedOrder(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-black uppercase rounded-xl transition"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2077,6 +2420,7 @@ export default function AdminContent() {
     'consultation-fournisseur': <SectionConsultationFournisseur />,
     'recherche-four': <SectionConsultationFournisseur />,
     'comparatif': <SectionConsultationFournisseur />,
+    'suivi-po': <SectionSuiviPO />,
     'ajouter-article': <SectionGestionArticles />,
     'modifier-article': <SectionGestionArticles />,
     'liste-articles': <SectionGestionArticles />,

@@ -53,70 +53,85 @@ export default function InscriptionPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col justify-center bg-[#0a0e1a] px-6 py-12 lg:px-8 text-slate-100">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <h2 className="text-3xl font-bold tracking-tight">Créer un compte</h2>
-        <p className="mt-2 text-sm text-slate-400">
-          Ou{" "}
-          <Link href="/connexion" className="font-semibold text-blue-500 hover:text-blue-400">
-            connectez-vous à votre compte
-          </Link>
-        </p>
+    <div className="relative flex min-h-screen flex-col items-center justify-center bg-[#0a0e1a] px-4 py-12 text-slate-100 overflow-hidden">
+      {/* Background Image Container */}
+      <div className="absolute inset-0 z-0">
+        <img 
+          src="/bg_hero.png" 
+          alt="AUTOP background" 
+          className="w-full h-full object-cover opacity-20 object-center"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-slate-950/90 to-slate-950" />
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-[#131a2e] px-6 py-8 shadow sm:rounded-lg sm:px-10 border border-slate-800">
+      <div className="relative z-10 w-full max-w-md">
+        {/* Logo and Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex bg-slate-900/60 border border-slate-800/80 rounded-3xl p-4 shadow-2xl backdrop-blur-md max-w-xs items-center justify-center mb-4">
+            <img src="/logo.png" alt="AUTOP Logo" className="max-h-16 w-auto object-contain" />
+          </div>
+          <h2 className="text-3xl font-black tracking-wider text-white">Créer un compte</h2>
+          <p className="mt-2 text-sm text-slate-400 normal-case">
+            Ou{" "}
+            <Link href="/connexion" className="font-semibold text-red-500 hover:text-red-400">
+              connectez-vous à votre compte
+            </Link>
+          </p>
+        </div>
+
+        {/* Card Form */}
+        <div className="bg-slate-900/30 border border-slate-800/80 rounded-3xl p-8 shadow-2xl backdrop-blur-md">
           <form className="space-y-6" onSubmit={handleRegister}>
             {error && (
-              <div className="rounded-md bg-red-500/10 p-3 text-sm text-red-400 border border-red-500/20 text-center">
+              <div className="rounded-xl bg-red-500/10 p-3 text-sm text-red-400 border border-red-500/20 text-center normal-case">
                 {error}
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium">Nom complet</label>
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Nom complet</label>
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-slate-700 bg-[#0a0e1a] px-3 py-2 text-slate-100 placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+                className="mt-1 block w-full rounded-xl border border-slate-750 bg-[#0a0e1a] px-3 py-2.5 text-slate-100 placeholder-slate-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 text-sm normal-case"
                 placeholder="Ex: Saif Belhassine"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium">Adresse email</label>
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Adresse email</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-slate-700 bg-[#0a0e1a] px-3 py-2 text-slate-100 placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+                className="mt-1 block w-full rounded-xl border border-slate-750 bg-[#0a0e1a] px-3 py-2.5 text-slate-100 placeholder-slate-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 text-sm normal-case"
                 placeholder="Ex: test@gmail.com"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium">Mot de passe</label>
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Mot de passe</label>
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-slate-700 bg-[#0a0e1a] px-3 py-2 text-slate-100 placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+                className="mt-1 block w-full rounded-xl border border-slate-750 bg-[#0a0e1a] px-3 py-2.5 text-slate-100 placeholder-slate-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 text-sm normal-case"
                 placeholder="••••••••"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium">Confirmer le mot de passe</label>
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Confirmer le mot de passe</label>
               <input
                 type="password"
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-slate-700 bg-[#0a0e1a] px-3 py-2 text-slate-100 placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+                className="mt-1 block w-full rounded-xl border border-slate-750 bg-[#0a0e1a] px-3 py-2.5 text-slate-100 placeholder-slate-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 text-sm normal-case"
                 placeholder="••••••••"
               />
             </div>
@@ -125,7 +140,7 @@ export default function InscriptionPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50"
+                className="flex w-full justify-center py-3.5 text-xs font-black uppercase tracking-widest text-white bg-red-600 rounded-xl hover:bg-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50 transition duration-300 shadow-lg shadow-red-600/20 hover:scale-[1.02] active:scale-[0.98]"
               >
                 {loading ? "Inscription en cours..." : "S'inscrire"}
               </button>

@@ -50,6 +50,52 @@ export async function POST(req: NextRequest) {
       targetUserId = clientUser.id
     }
 
+    // Auto-enregistrement des nouveaux articles et association aux produits
+    const devisItems = [];
+    for (const item of items) {
+      const name = item.name || item.designation || 'Nouvel Article';
+      const reference = item.reference ? item.reference.trim().toUpperCase() : null;
+      let productId = null;
+
+      if (reference) {
+        let product = await prisma.product.findUnique({
+          where: { reference }
+        });
+
+        if (!product) {
+          let category = await prisma.category.findFirst();
+          if (!category) {
+            category = await prisma.category.create({
+              data: { name: 'Général', slug: 'general' }
+            });
+          }
+
+          product = await prisma.product.create({
+            data: {
+              sku: reference,
+              reference: reference,
+              name: name,
+              slug: `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${reference.toLowerCase()}`,
+              price: parseFloat(item.price || item.puHT) || 0,
+              costPrice: (parseFloat(item.price || item.puHT) || 0) * 0.8,
+              stock: 0,
+              categoryId: category.id,
+              status: 'ACTIVE'
+            }
+          });
+        }
+        productId = product.id;
+      }
+
+      devisItems.push({
+        name,
+        price: parseFloat(item.price || item.puHT) || 0,
+        quantity: parseInt(item.quantity || item.qty) || 1,
+        discount: parseFloat(item.discount) || 0,
+        productId
+      });
+    }
+
     const devis = await prisma.devis.create({
       data: {
         userId: targetUserId,
@@ -62,12 +108,7 @@ export async function POST(req: NextRequest) {
         totalPrice: user.role === 'ADMIN' ? parseFloat(body.totalPrice) || 0 : 0,
         responseNote: user.role === 'ADMIN' ? body.responseNote || 'Proposition commerciale établie par l\'administrateur.' : null,
         items: {
-          create: items.map((item: any) => ({
-            name: item.name || item.designation,
-            price: parseFloat(item.price || item.puHT) || 0,
-            quantity: parseInt(item.quantity || item.qty) || 1,
-            discount: parseFloat(item.discount) || 0
-          })),
+          create: devisItems
         },
       },
       include: { items: true },

@@ -46,6 +46,44 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Fournisseur et articles requis' }, { status: 400 });
     }
 
+    // Auto-enregistrement des articles inexistants en stock
+    for (const it of items) {
+      if (it.reference) {
+        const refNormalized = it.reference.trim().toUpperCase();
+        const existing = await prisma.product.findUnique({
+          where: { reference: refNormalized }
+        });
+
+        if (!existing) {
+          // Trouver ou créer une catégorie par défaut
+          let category = await prisma.category.findFirst();
+          if (!category) {
+            category = await prisma.category.create({
+              data: {
+                name: 'Général',
+                slug: 'general',
+              }
+            });
+          }
+
+          // Création du produit dans le catalogue
+          await prisma.product.create({
+            data: {
+              sku: refNormalized,
+              reference: refNormalized,
+              name: it.designation || 'Nouvel Article',
+              slug: `${(it.designation || 'nouvel-article').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${refNormalized.toLowerCase()}`,
+              price: (parseFloat(it.unitPrice) || 0) * 1.25, // prix de vente par défaut (+25% marge)
+              costPrice: parseFloat(it.unitPrice) || 0,
+              stock: 0,
+              categoryId: category.id,
+              status: 'ACTIVE'
+            }
+          });
+        }
+      }
+    }
+
     const totalAmount = items.reduce((sum: number, it: any) => sum + (it.quantity * it.unitPrice), 0);
 
     const order = await prisma.purchaseOrder.create({
@@ -57,7 +95,7 @@ export async function POST(req: NextRequest) {
         notes,
         items: {
           create: items.map((it: any) => ({
-            reference: it.reference || '',
+            reference: it.reference?.trim().toUpperCase() || '',
             designation: it.designation,
             quantity: it.quantity || 1,
             unitPrice: it.unitPrice || 0,

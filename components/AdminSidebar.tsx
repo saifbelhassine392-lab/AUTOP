@@ -53,6 +53,7 @@ const sections: SidebarSection[] = [
       { id: 'ajouter-fournisseur', label: 'AJOUTER FOURNISSEUR', icon: UserPlus },
       { id: 'liste-fournisseurs', label: 'LISTE FOURNISSEURS', icon: List },
       { id: 'consultation-fournisseur', label: 'CONSULTATION FOURNISSEUR', icon: ClipboardList },
+      { id: 'suivi-po', label: 'SUIVI PO & LIVRAISONS', icon: Clock },
     ]
   },
   {
@@ -124,9 +125,9 @@ export default function AdminSidebar() {
   };
 
   return (
-    <aside className="bg-slate-950 border-r border-slate-800 w-[260px] hidden md:flex flex-col overflow-hidden h-screen sticky top-0">
+    <aside className="carbon-pattern border-r border-red-600/20 w-[260px] hidden md:flex flex-col overflow-hidden h-screen sticky top-0 shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
       {/* Logo Header */}
-      <div className="flex flex-col items-center justify-center py-5 px-4 border-b border-slate-800 bg-slate-900">
+      <div className="flex flex-col items-center justify-center py-5 px-4 border-b border-slate-800/85 bg-slate-950/70 backdrop-blur-md">
         <div className="w-32 h-16 relative mb-2">
           <Image src="/logo.png" alt="AUTOP Logo" fill style={{ objectFit: 'contain' }} priority />
         </div>
@@ -134,8 +135,8 @@ export default function AdminSidebar() {
       </div>
 
       {/* User Info */}
-      <div className="flex items-center gap-2 px-4 py-3 bg-slate-900/50 border-b border-slate-800">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+      <div className="flex items-center gap-2 px-4 py-3 bg-slate-950/50 border-b border-slate-800/85 backdrop-blur-md">
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-orange-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
           {user?.name?.charAt(0)?.toUpperCase() || 'A'}
         </div>
         <div className="min-w-0">

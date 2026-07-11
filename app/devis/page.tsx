@@ -354,7 +354,7 @@ export default function DevisPage() {
   if (submittedQuoteId) {
     return (
       <div className="max-w-xl mx-auto p-6 bg-[#0a0e1a] min-h-screen text-slate-100 flex items-center justify-center">
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center shadow-2xl w-full">
+        <div className="neon-border-glow bg-slate-900/80 border border-slate-800 rounded-3xl p-8 text-center shadow-2xl w-full backdrop-blur-md">
           <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4 animate-bounce" />
           <h2 className="text-2xl font-black text-white mb-2">Demande Confirmée !</h2>
           <p className="text-sm text-slate-400 mb-6">
@@ -364,7 +364,7 @@ export default function DevisPage() {
           <div className="space-y-3 mb-8">
             <button
               onClick={() => downloadPDF(submittedQuoteId)}
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition-all shadow-md"
+              className="chrome-gloss w-full flex items-center justify-center gap-2.5 px-6 py-3.5 bg-gradient-to-r from-blue-650 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-black uppercase tracking-wider rounded-xl text-xs transition-all shadow-lg hover:scale-[1.01] active:scale-[0.99]"
             >
               <FileText className="w-4 h-4" />
               Télécharger le devis en format PDF
@@ -372,7 +372,7 @@ export default function DevisPage() {
 
             <button
               onClick={() => downloadExcel(submittedQuoteId)}
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl text-xs transition-all shadow-md"
+              className="chrome-gloss w-full flex items-center justify-center gap-2.5 px-6 py-3.5 bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 text-white font-black uppercase tracking-wider rounded-xl text-xs transition-all shadow-lg hover:scale-[1.01] active:scale-[0.99]"
             >
               <FileSpreadsheet className="w-4 h-4" />
               Télécharger le devis en format Excel (.csv)
@@ -380,7 +380,7 @@ export default function DevisPage() {
 
             <button
               onClick={() => handleWhatsAppShare('98774525', submittedQuoteId)}
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-xs transition-all shadow-md"
+              className="chrome-gloss w-full flex items-center justify-center gap-2.5 px-6 py-3.5 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-black uppercase tracking-wider rounded-xl text-xs transition-all shadow-lg hover:scale-[1.01] active:scale-[0.99]"
             >
               <MessageCircle className="w-4 h-4" />
               Envoyer par WhatsApp (Comptoir 98 774 525)
@@ -388,7 +388,7 @@ export default function DevisPage() {
 
             <button
               onClick={() => handleWhatsAppShare('95576525', submittedQuoteId)}
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-xs transition-all shadow-md"
+              className="chrome-gloss w-full flex items-center justify-center gap-2.5 px-6 py-3.5 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-black uppercase tracking-wider rounded-xl text-xs transition-all shadow-lg hover:scale-[1.01] active:scale-[0.99]"
             >
               <MessageCircle className="w-4 h-4" />
               Envoyer par WhatsApp (Comptoir 95 576 525)
@@ -413,104 +413,110 @@ export default function DevisPage() {
         Formulaire de Devis
       </h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div className="flex flex-col">
-          <label className="text-xs font-semibold text-slate-400 mb-1">NOM COMPLET *</label>
-          <input 
-            type="text" 
-            placeholder="Nom complet" 
-            className="bg-slate-900 text-slate-100 p-3 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500" 
-            value={clientName} 
-            onChange={(e) => setClientName(e.target.value)} 
-          />
-        </div>
-        <div className="flex flex-col">
-          <label className="text-xs font-semibold text-slate-400 mb-1">EMAIL DU CLIENT *</label>
-          <input 
-            type="email" 
-            placeholder="votre@email.com" 
-            className="bg-slate-900 text-slate-100 p-3 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500" 
-            value={clientEmail} 
-            onChange={(e) => setClientEmail(e.target.value)} 
-          />
-        </div>
-        <div className="flex flex-col">
-          <label className="text-xs font-semibold text-slate-400 mb-1">MARQUE DU VÉHICULE</label>
-          <input 
-            type="text" 
-            placeholder="Ex: Peugeot, Renault..." 
-            className="bg-slate-900 text-slate-100 p-3 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500" 
-            value={brand} 
-            onChange={(e) => setBrand(e.target.value)} 
-          />
-        </div>
-        <div className="flex flex-col">
-          <label className="text-xs font-semibold text-slate-400 mb-1">MODÈLE DU VÉHICULE</label>
-          <input 
-            type="text" 
-            placeholder="Ex: 308, Clio..." 
-            className="bg-slate-900 text-slate-100 p-3 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500" 
-            value={model} 
-            onChange={(e) => setModel(e.target.value)} 
-          />
-        </div>
-        <div className="flex flex-col md:col-span-2">
-          <label className="text-xs font-semibold text-slate-400 mb-1">NUMÉRO VIN (CHÂSSIS) - CONSEILLÉ</label>
-          <input 
-            type="text" 
-            placeholder="Numéro VIN (17 caractères)" 
-            className="bg-slate-900 text-slate-100 p-3 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500 font-mono tracking-wider" 
-            value={vin} 
-            onChange={(e) => setVin(e.target.value)} 
-          />
-        </div>
-        <div className="flex flex-col md:col-span-2">
-          <label className="text-xs font-semibold text-slate-400 mb-1">REMARQUES ET INFORMATIONS COMPLÉMENTAIRES</label>
-          <textarea 
-            placeholder="Précisez ici toute information utile (motorisation, année de mise en circulation, etc.)..." 
-            rows={3} 
-            className="bg-slate-900 text-slate-100 p-3 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500 resize-none" 
-            value={remarks} 
-            onChange={(e) => setRemarks(e.target.value)} 
-          />
+      {/* Card 1: Informations Client et Véhicule */}
+      <div className="tilt-card-3d bg-slate-900/40 border border-slate-800/80 rounded-[28px] p-6 md:p-8 backdrop-blur-md shadow-xl mb-6">
+        <div className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-4">1. INFORMATIONS CLIENT & VÉHICULE</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex flex-col">
+            <label className="text-xs font-semibold text-slate-450 mb-1">NOM COMPLET *</label>
+            <input 
+              type="text" 
+              placeholder="Nom complet" 
+              className="bg-slate-950/60 text-slate-100 p-3 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all" 
+              value={clientName} 
+              onChange={(e) => setClientName(e.target.value)} 
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-xs font-semibold text-slate-450 mb-1">EMAIL DU CLIENT *</label>
+            <input 
+              type="email" 
+              placeholder="votre@email.com" 
+              className="bg-slate-950/60 text-slate-100 p-3 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all lowercase" 
+              value={clientEmail} 
+              onChange={(e) => setClientEmail(e.target.value)} 
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-xs font-semibold text-slate-450 mb-1">MARQUE DU VÉHICULE</label>
+            <input 
+              type="text" 
+              placeholder="Ex: Peugeot, Renault..." 
+              className="bg-slate-950/60 text-slate-100 p-3 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all" 
+              value={brand} 
+              onChange={(e) => setBrand(e.target.value)} 
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-xs font-semibold text-slate-450 mb-1">MODÈLE DU VÉHICULE</label>
+            <input 
+              type="text" 
+              placeholder="Ex: 308, Clio..." 
+              className="bg-slate-950/60 text-slate-100 p-3 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all" 
+              value={model} 
+              onChange={(e) => setModel(e.target.value)} 
+            />
+          </div>
+          <div className="flex flex-col md:col-span-2">
+            <label className="text-xs font-semibold text-slate-450 mb-1">NUMÉRO VIN (CHÂSSIS) - CONSEILLÉ</label>
+            <input 
+              type="text" 
+              placeholder="Numéro VIN (17 caractères)" 
+              className="bg-slate-950/60 text-slate-100 p-3 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all font-mono tracking-wider" 
+              value={vin} 
+              onChange={(e) => setVin(e.target.value)} 
+            />
+          </div>
+          <div className="flex flex-col md:col-span-2">
+            <label className="text-xs font-semibold text-slate-450 mb-1">REMARQUES ET INFORMATIONS COMPLÉMENTAIRES</label>
+            <textarea 
+              placeholder="Précisez ici toute information utile (motorisation, année de mise en circulation, etc.)..." 
+              rows={3} 
+              className="bg-slate-950/60 text-slate-100 p-3 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none normal-case" 
+              value={remarks} 
+              onChange={(e) => setRemarks(e.target.value)} 
+            />
+          </div>
         </div>
       </div>
 
-      <div className="flex flex-col mb-6 bg-slate-900/40 p-4 border border-slate-800 rounded-xl">
-        <label className="text-xs font-semibold text-slate-400 mb-2">FORMAT DE PIÈCE JOINTE REQUIS *</label>
-        <div className="flex gap-6">
-          <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
-            <input 
-              type="radio" 
-              name="docFormat" 
-              checked={selectedFormat === 'pdf'} 
-              onChange={() => setSelectedFormat('pdf')} 
-              className="text-red-500 focus:ring-red-500" 
-            />
-            Document PDF (.pdf)
-          </label>
-          <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
-            <input 
-              type="radio" 
-              name="docFormat" 
-              checked={selectedFormat === 'excel'} 
-              onChange={() => setSelectedFormat('excel')} 
-              className="text-red-500 focus:ring-red-500" 
-            />
-            Feuille de calcul Excel (.csv)
-          </label>
+      {/* Card 2: Liste des Pièces & Format */}
+      <div className="tilt-card-3d bg-slate-900/40 border border-slate-800/80 rounded-[28px] p-6 md:p-8 backdrop-blur-md shadow-xl mb-6">
+        <div className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-4">2. CHOIX DU FORMAT & PIÈCES DEMANDÉES</div>
+        
+        <div className="flex flex-col mb-6 bg-slate-950/40 p-4 border border-slate-800 rounded-2xl">
+          <label className="text-xs font-semibold text-slate-400 mb-2">FORMAT DE PIÈCE JOINTE REQUIS *</label>
+          <div className="flex gap-6">
+            <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer select-none">
+              <input 
+                type="radio" 
+                name="docFormat" 
+                checked={selectedFormat === 'pdf'} 
+                onChange={() => setSelectedFormat('pdf')} 
+                className="text-red-500 focus:ring-red-500 bg-slate-900 border-slate-800" 
+              />
+              Document PDF (.pdf)
+            </label>
+            <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer select-none">
+              <input 
+                type="radio" 
+                name="docFormat" 
+                checked={selectedFormat === 'excel'} 
+                onChange={() => setSelectedFormat('excel')} 
+                className="text-red-500 focus:ring-red-500 bg-slate-900 border-slate-800" 
+              />
+              Feuille de calcul Excel (.csv)
+            </label>
+          </div>
         </div>
-      </div>
 
-      <div className="mb-6">
-        <label className="block text-xs font-semibold text-slate-400 mb-2">LISTE DES PIÈCES DEMANDÉES</label>
         <div className="space-y-3">
           {items.map((item, idx) => (
             <div key={idx} className="flex gap-2 items-center">
               <div className="w-1/3 relative">
                 <input 
                   placeholder="Réf" 
-                  className="w-full bg-slate-900 text-slate-100 p-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500 font-mono text-sm uppercase" 
+                  className="w-full bg-slate-950/60 text-slate-100 p-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 font-mono text-sm uppercase" 
                   value={item.reference} 
                   onChange={(e) => {
                     handleItemChange(idx, 'reference', e.target.value);
@@ -526,6 +532,14 @@ export default function DevisPage() {
                     setActiveSuggestField(null);
                   }, 200)}
                 />
+                {item.reference && (() => {
+                  const match = catalogue.find(x => x.reference?.toUpperCase() === item.reference?.toUpperCase());
+                  return match ? (
+                    <span className="text-[10px] text-green-400 font-black block mt-1 uppercase tracking-wider">✓ Disponible en stock (Qté: {match.stock})</span>
+                  ) : (
+                    <span className="text-[10px] text-amber-500 font-black block mt-1 uppercase tracking-wider">⚡ Nouveau produit</span>
+                  );
+                })()}
                 {activeSuggestRow === idx && activeSuggestField === 'ref' && getSuggestions(item.reference, 'ref').length > 0 && (
                   <div className="absolute left-0 right-0 z-50 mt-1 bg-slate-950 border border-slate-800 rounded-xl max-h-48 overflow-y-auto shadow-2xl">
                     {getSuggestions(item.reference, 'ref').map(p => (
@@ -549,7 +563,7 @@ export default function DevisPage() {
               <div className="flex-1 relative">
                 <input 
                   placeholder="Désignation (ex: Plaquettes de frein...)" 
-                  className="w-full bg-slate-900 text-slate-100 p-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500 text-sm uppercase" 
+                  className="w-full bg-slate-950/60 text-slate-100 p-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-sm uppercase" 
                   value={item.designation} 
                   onChange={(e) => {
                     handleItemChange(idx, 'designation', e.target.value);
@@ -588,7 +602,7 @@ export default function DevisPage() {
               <input 
                 type="number" 
                 min={1} 
-                className="w-16 bg-slate-900 text-slate-100 p-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500 text-center font-bold text-sm" 
+                className="w-16 bg-slate-950/60 text-slate-100 p-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-center font-bold text-sm" 
                 value={item.quantity} 
                 onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)} 
               />
@@ -604,26 +618,27 @@ export default function DevisPage() {
         </div>
         <button 
           onClick={handleAddItem} 
-          className="text-xs text-red-500 hover:text-red-400 font-bold mt-3 inline-block transition-colors"
+          className="text-xs text-red-500 hover:text-red-400 font-bold mt-4 inline-block transition-colors"
         >
           ➕ Ajouter une autre pièce
         </button>
       </div>
 
-      <div className="flex flex-col mb-8 bg-slate-900/40 p-4 border border-slate-800 rounded-xl">
-        <label className="text-xs font-semibold text-slate-400 mb-2">PHOTOS DU VÉHICULE OU DE LA PIÈCE (OPTIONNEL)</label>
+      {/* Card 3: Chargement de Photos */}
+      <div className="tilt-card-3d bg-slate-900/40 border border-slate-800/80 rounded-[28px] p-6 md:p-8 backdrop-blur-md shadow-xl mb-8">
+        <div className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-4">3. PHOTOS DU VÉHICULE OU DE LA PIÈCE (OPTIONNEL)</div>
         <input 
           type="file" 
           onChange={handleFileChange} 
-          className="text-slate-400 text-xs file:bg-slate-800 file:text-slate-100 file:border-0 file:rounded-xl file:px-4 file:py-2 file:mr-4 file:hover:bg-slate-700 file:cursor-pointer" 
+          className="text-slate-400 text-xs file:bg-slate-800 file:text-slate-100 file:border-0 file:rounded-xl file:px-4 file:py-2 file:mr-4 file:hover:bg-slate-700 file:cursor-pointer transition-colors" 
         />
-        {photoName && <span className="text-xs text-green-400 mt-2">Fichier prêt : {photoName}</span>}
+        {photoName && <span className="text-xs text-green-400 mt-2 block">Fichier prêt : {photoName}</span>}
       </div>
 
       <button 
         disabled={isSubmitting}
         onClick={handleConfirmAndSubmit}
-        className="w-full bg-red-600 hover:bg-red-700 text-white p-4 rounded-xl font-bold transition-all disabled:bg-red-800 disabled:text-slate-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
+        className="chrome-gloss w-full bg-gradient-to-r from-red-650 to-red-700 hover:from-red-700 hover:to-red-800 text-white p-4 rounded-xl font-black text-sm uppercase tracking-widest transition-all disabled:from-red-900 disabled:to-red-950 disabled:text-slate-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-xl shadow-red-600/20 hover:scale-[1.01] active:scale-[0.99]"
       >
         {isSubmitting ? 'Enregistrement...' : 'CONFIRMER ET ENVOYER LA DEMANDE'}
       </button>

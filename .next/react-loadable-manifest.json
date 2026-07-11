@@ -41,6 +41,13 @@
       "static/chunks/520.e9a1e35819a57d75.js"
     ]
   },
+  "components\\AdminContent.tsx -> xlsx": {
+    "id": 27800,
+    "files": [
+      "static/chunks/2170a4aa.6309747ca1df441d.js",
+      "static/chunks/919.309cb8bf58085118.js"
+    ]
+  },
   "node_modules\\jspdf\\dist\\jspdf.es.min.js -> canvg": {
     "id": 82865,
     "files": [
