@@ -625,7 +625,7 @@ function SectionAjouterFournisseur() {
         )}
 
         <div className="mt-5 flex gap-2">
-          <button onClick={() => setForm({ name: '', contactName: '', phone: '', email: '', address: '', city: '' })}
+          <button onClick={() => setForm({ name: '', contactName: '', phone: '', email: '', address: '', city: '', b2bUrl: '', b2bLogin: '', b2bPassword: '' })}
             className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-[11px] font-black uppercase border border-slate-700 transition">
             <X className="w-3.5 h-3.5" /> RÉINITIALISER
           </button>
