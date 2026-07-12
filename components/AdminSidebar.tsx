@@ -5,12 +5,37 @@ import { useApp } from '@/lib/context';
 import { useSession, signOut } from 'next-auth/react';
 import Image from 'next/image';
 import {
-  Inbox, Clock, FileText, ShoppingBag,
+  Inbox, Clock, FileText, ShoppingBag, MessageSquare,
   FilePlus, FileDown, Send,
   Building2, UserPlus, List, ClipboardList,
   Package, PlusCircle, Edit, BarChart2, TrendingUp,
   LogOut, ChevronRight, Receipt
 } from 'lucide-react';
+
+const playNotificationSound = () => {
+  try {
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1); // A5
+    
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.start();
+    osc.stop(ctx.currentTime + 0.35);
+  } catch (e) {
+    console.error('Audio beep failed', e);
+  }
+};
 
 type SidebarItem = {
   id: string;
@@ -35,6 +60,7 @@ const sections: SidebarSection[] = [
       { id: 'traitement', label: 'EN TRAITEMENT', icon: Clock, badge: 5, badgeColor: 'bg-blue-500' },
       { id: 'devis-gen', label: 'DEVIS GÉNÉRÉS', icon: FileText, badge: 12, badgeColor: 'bg-green-500' },
       { id: 'bons', label: 'BONS DE COMMANDE', icon: ShoppingBag, badge: 8, badgeColor: 'bg-purple-500' },
+      { id: 'chat-interne', label: 'CHAT INTERNE / PRIX', icon: MessageSquare },
     ]
   },
   {
@@ -54,6 +80,7 @@ const sections: SidebarSection[] = [
       { id: 'liste-fournisseurs', label: 'LISTE FOURNISSEURS', icon: List },
       { id: 'consultation-fournisseur', label: 'CONSULTATION FOURNISSEUR', icon: ClipboardList },
       { id: 'suivi-po', label: 'SUIVI PO & LIVRAISONS', icon: Clock },
+      { id: 'historique-achat', label: "HISTORIQUE D'ACHATS", icon: ClipboardList },
     ]
   },
   {
@@ -87,7 +114,18 @@ export default function AdminSidebar() {
   const { data: session } = useSession();
   const user = session?.user as any;
 
-  const [counts, setCounts] = useState({ reception: 0, traitement: 0, devisGen: 0, bons: 0 });
+  const [activeProfile, setActiveProfile] = useState<string | null>(null);
+
+  useEffect(() => {
+    setActiveProfile(localStorage.getItem('activeAdminProfile'));
+    const handleProfileChange = () => {
+      setActiveProfile(localStorage.getItem('activeAdminProfile'));
+    };
+    window.addEventListener('active-profile-changed', handleProfileChange);
+    return () => window.removeEventListener('active-profile-changed', handleProfileChange);
+  }, []);
+
+  const [counts, setCounts] = useState({ reception: 0, traitement: 0, devisGen: 0, bons: 0, chat: 0 });
 
   const fetchBadgeCounts = () => {
     fetch('/api/quotes')
@@ -115,6 +153,21 @@ export default function AdminSidebar() {
         setCounts(prev => ({ ...prev, bons: oList.length }));
       })
       .catch(() => {});
+
+    fetch('/api/chat')
+      .then(r => r.json())
+      .then(d => {
+        if (d && d.success && Array.isArray(d.data)) {
+          const chatCount = d.data.filter((c: any) => c.lastMessage && !c.lastMessage.isAdmin).length;
+          setCounts(prev => {
+            if (chatCount > prev.chat) {
+              playNotificationSound();
+            }
+            return { ...prev, chat: chatCount };
+          });
+        }
+      })
+      .catch(() => {});
   };
 
   useEffect(() => {
@@ -128,6 +181,7 @@ export default function AdminSidebar() {
     if (id === 'traitement') return counts.traitement;
     if (id === 'devis-gen') return counts.devisGen;
     if (id === 'bons') return counts.bons;
+    if (id === 'chat-interne') return counts.chat;
     return undefined;
   };
 
@@ -142,14 +196,27 @@ export default function AdminSidebar() {
       </div>
 
       {/* User Info */}
-      <div className="flex items-center gap-2 px-4 py-3 bg-slate-950/50 border-b border-slate-800/85 backdrop-blur-md">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-orange-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
-          {user?.name?.charAt(0)?.toUpperCase() || 'A'}
+      <div className="flex flex-col gap-1 px-4 py-3 bg-slate-950/50 border-b border-slate-800/85 backdrop-blur-md">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-650 to-orange-550 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+            {(activeProfile || user?.name || 'A').charAt(0).toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <p className="text-white font-black text-xs truncate uppercase tracking-wider">
+              {activeProfile || user?.name || 'ADMIN'}
+            </p>
+            <p className="text-slate-500 text-[9px] truncate">{user?.email}</p>
+          </div>
         </div>
-        <div className="min-w-0">
-          <p className="text-white font-semibold text-xs truncate">{user?.name?.toUpperCase() || 'ADMIN'}</p>
-          <p className="text-slate-500 text-[9px] truncate">{user?.email}</p>
-        </div>
+        <button
+          onClick={() => {
+            localStorage.removeItem('activeAdminProfile');
+            window.dispatchEvent(new Event('active-profile-changed'));
+          }}
+          className="text-left text-red-500 hover:text-red-400 text-[8px] font-black uppercase mt-1 tracking-wider transition-colors"
+        >
+          ⚡ Changer de Profil
+        </button>
       </div>
 
       {/* Navigation */}

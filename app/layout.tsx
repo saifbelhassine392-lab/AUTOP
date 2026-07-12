@@ -1,5 +1,6 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import Providers from "./Providers";
+import ClientChatWidget from "@/components/ClientChatWidget";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -17,6 +18,7 @@ export default function RootLayout({
       <body className="bg-[#0a0e1a] text-slate-100 antialiased">
         <Providers>
           {children}
+          <ClientChatWidget />
         </Providers>
       </body>
     </html>

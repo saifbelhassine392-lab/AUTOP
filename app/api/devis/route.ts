@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
       include: {
         user: { select: { name: true, email: true, phone: true } },
         items: { include: { product: true } },
+        managedBy: true,
       },
       orderBy: { createdAt: 'desc' },
     })
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
   try {
     const user = session.user as any
     const body = await req.json()
-    const { vehicleBrand, vehicleModel, vehicleYear, vehicleVin, notes, items, clientEmail, quoteId } = body
+    const { vehicleBrand, vehicleModel, vehicleYear, vehicleVin, notes, items, clientEmail, quoteId, managedByName } = body
 
     let targetUserId = user.id
 
@@ -48,6 +49,20 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Aucun utilisateur client trouvé avec cet e-mail. Le client doit d\'abord s\'inscrire.' }, { status: 404 })
       }
       targetUserId = clientUser.id
+    }
+
+    // Chercher le profil admin actif
+    let managedById = null;
+    if (managedByName) {
+      let profile = await prisma.adminProfile.findUnique({
+        where: { name: managedByName }
+      });
+      if (!profile) {
+        profile = await prisma.adminProfile.create({
+          data: { name: managedByName }
+        });
+      }
+      managedById = profile.id;
     }
 
     // Auto-enregistrement des nouveaux articles et association aux produits
@@ -110,15 +125,19 @@ export async function POST(req: NextRequest) {
         items: {
           create: devisItems
         },
+        managedById
       },
       include: { items: true },
     })
 
-    // Mettre à jour la demande de devis d'origine en statut TREATED
+    // Mettre à jour la demande de devis d'origine en statut TREATED et l'assigner à l'admin
     if (quoteId) {
       await prisma.quote.update({
         where: { id: quoteId },
-        data: { status: 'TREATED' }
+        data: { 
+          status: 'TREATED',
+          ...(managedById ? { managedById } : {})
+        }
       })
     }
 
@@ -126,5 +145,53 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Error creating devis:', error)
     return NextResponse.json({ error: 'Erreur création devis' }, { status: 500 })
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { devisId, managedByName } = body;
+
+    if (!devisId) {
+      return NextResponse.json({ error: 'Identifiant de devis requis' }, { status: 400 });
+    }
+
+    const data: any = {};
+
+    if (managedByName !== undefined) {
+      if (managedByName === null || managedByName === 'NON ASSIGNÉ') {
+        data.managedById = null;
+      } else {
+        let profile = await prisma.adminProfile.findUnique({
+          where: { name: managedByName }
+        });
+        if (!profile) {
+          profile = await prisma.adminProfile.create({
+            data: { name: managedByName }
+          });
+        }
+        data.managedById = profile.id;
+      }
+    }
+
+    const updatedDevis = await prisma.devis.update({
+      where: { id: devisId },
+      data,
+      include: {
+        managedBy: true,
+        items: true
+      }
+    });
+
+    return NextResponse.json({ success: true, data: updatedDevis });
+  } catch (error) {
+    console.error('Devis PATCH error:', error);
+    return NextResponse.json({ error: 'Erreur serveur lors de la mise à jour' }, { status: 500 });
   }
 }

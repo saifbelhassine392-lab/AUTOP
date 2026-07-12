@@ -38,6 +38,7 @@ export async function GET(req: NextRequest) {
           user: {
             select: { firstName: true, lastName: true, email: true, name: true },
           },
+          managedBy: true,
         },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
@@ -184,7 +185,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { orderId, status, trackingNote, paymentStatus, isPaid } = body;
+    const { orderId, status, trackingNote, paymentStatus, isPaid, managedByName } = body;
 
     if (!orderId) {
       return NextResponse.json({ success: false, error: 'Données manquantes' }, { status: 400 });
@@ -195,6 +196,22 @@ export async function PATCH(req: NextRequest) {
     if (trackingNote !== undefined) data.customerNote = trackingNote || null;
     if (paymentStatus) data.paymentStatus = paymentStatus;
     if (isPaid !== undefined) data.isPaid = isPaid;
+
+    if (managedByName !== undefined) {
+      if (managedByName === null || managedByName === 'NON ASSIGNÉ') {
+        data.managedById = null;
+      } else {
+        let profile = await prisma.adminProfile.findUnique({
+          where: { name: managedByName }
+        });
+        if (!profile) {
+          profile = await prisma.adminProfile.create({
+            data: { name: managedByName }
+          });
+        }
+        data.managedById = profile.id;
+      }
+    }
 
     if (status) {
       data.statusHistory = {
@@ -207,7 +224,12 @@ export async function PATCH(req: NextRequest) {
 
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
-      data
+      data,
+      include: {
+        managedBy: true,
+        items: true,
+        user: true
+      }
     });
 
     return NextResponse.json({ success: true, data: updatedOrder });

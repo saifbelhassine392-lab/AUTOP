@@ -2,13 +2,13 @@
 
 import { useApp } from '@/lib/context';
 import { useSession } from 'next-auth/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
-  Search, Edit3, FileText, Mail, Phone,
+  Search, Edit3, MessageSquare, FileText, Mail, Phone,
   Plus, Trash2, Save, X, Send,
   Building2, UserPlus, List, ClipboardList, Package,
   CheckCircle, AlertTriangle, Printer, Clock,
-  ShoppingBag, BarChart2, Download, Receipt
+  ShoppingBag, BarChart2, Download, Receipt, Paperclip
 } from 'lucide-react';
 
 // ─── Input style helper ───────────────────────────────────────────────────────
@@ -275,6 +275,7 @@ function SectionCreerDevis({ quoteToLoad, onClearQuote }: SectionCreerDevisProps
     setSaved(false);
 
     try {
+      const activeAdminProfile = typeof window !== 'undefined' ? localStorage.getItem('activeAdminProfile') : null;
       const response = await fetch('/api/devis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -288,7 +289,8 @@ function SectionCreerDevis({ quoteToLoad, onClearQuote }: SectionCreerDevisProps
           totalPrice: totalTTC,
           responseNote: `Proposition commerciale établie par l'administrateur.\nRemise globale de ${globalDiscount}%.`,
           items: items.filter(it => it.designation.trim()),
-          quoteId: quoteToLoad?.id || null
+          quoteId: quoteToLoad?.id || null,
+          managedByName: activeAdminProfile || null
         })
       });
 
@@ -1879,6 +1881,21 @@ function SectionDevisGeneres() {
     fetchDevis();
   }, []);
 
+  const handleAssignDevis = async (devisId: string, name: string) => {
+    try {
+      const res = await fetch('/api/devis', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ devisId, managedByName: name })
+      });
+      if (res.ok) {
+        fetchDevis();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleDownloadPDF = async (devis: any) => {
     const { jsPDF } = await import("jspdf");
     const autoTable = (await import("jspdf-autotable")).default;
@@ -2008,9 +2025,25 @@ function SectionDevisGeneres() {
                   <h4 className="font-black text-white uppercase text-sm mt-0.5">{d.clientEmail}</h4>
                   <p className="text-[10px] text-slate-400 mt-0.5 font-sans">VÉHICULE: {d.vehicleBrand?.toUpperCase()} {d.vehicleModel?.toUpperCase()} · CRÉÉ LE: {new Date(d.createdAt).toLocaleDateString('fr-FR')}</p>
                 </div>
-                <div className="text-right">
-                  <span className="text-[10px] text-slate-400 block uppercase font-bold">MONTANT TOTAL TTC</span>
-                  <span className="font-black text-white text-base font-mono">{(d.totalPrice || 0).toFixed(3)} TND</span>
+                <div className="flex flex-col items-end gap-2 text-right">
+                  <div>
+                    <span className="text-[10px] text-slate-400 block uppercase font-bold">MONTANT TOTAL TTC</span>
+                    <span className="font-black text-white text-base font-mono">{(d.totalPrice || 0).toFixed(3)} TND</span>
+                  </div>
+                  {/* Sélecteur de profil admin */}
+                  <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1">
+                    <span className="text-[8px] text-slate-500 font-black uppercase tracking-wider">Assigné à :</span>
+                    <select
+                      value={d.managedBy?.name?.toUpperCase() || 'NON ASSIGNÉ'}
+                      onChange={(e) => handleAssignDevis(d.id, e.target.value)}
+                      className="bg-transparent text-slate-200 font-bold text-[9px] focus:outline-none cursor-pointer uppercase"
+                    >
+                      <option value="NON ASSIGNÉ" className="bg-slate-900 text-slate-500">NON ASSIGNÉ</option>
+                      <option value="SAIF" className="bg-slate-900 text-white">SAIF</option>
+                      <option value="AMINE" className="bg-slate-900 text-white">AMINE</option>
+                      <option value="SAIFALLAH" className="bg-slate-900 text-white">SAIFALLAH</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -2100,6 +2133,21 @@ function SectionBonsEtLivraisons() {
     }
   };
 
+  const handleAssignOrder = async (orderId: string, name: string) => {
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, managedByName: name })
+      });
+      if (res.ok) {
+        fetchOrders();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const filtered = orders.filter(o => 
     o.orderNumber?.toLowerCase().includes(search.toLowerCase()) ||
     o.user?.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -2134,11 +2182,27 @@ function SectionBonsEtLivraisons() {
                 <span className="font-mono text-green-400 font-black text-sm uppercase">#{o.orderNumber}</span>
                 <h4 className="font-black text-white uppercase text-sm mt-0.5">{o.user?.name || `${o.user?.firstName || ''} ${o.user?.lastName || ''}`.trim() || 'CLIENT'}</h4>
                 <p className="text-[10px] text-slate-400 mt-0.5 font-sans">{o.user?.email} · CRÉÉ LE: {new Date(o.createdAt).toLocaleDateString('fr-FR')}</p>
-                {o.shippingAddress && <p className="text-[10px] text-cyan-400 mt-1 uppercase font-bold">📍 ADRESSE: {o.shippingAddress}</p>}
+                {o.shippingAddress && <p className="text-[10px] text-cyan-400 mt-1 uppercase font-bold">📍 ADRESSE: {o.shippingAddress.street || o.shippingAddress}</p>}
               </div>
-              <div className="text-right">
-                <span className="text-[10px] text-slate-400 block uppercase font-bold">MONTANT TOTAL TTC</span>
-                <span className="font-black text-white text-base font-mono">{o.total.toFixed(3)} TND</span>
+              <div className="flex flex-col items-end gap-2 text-right">
+                <div>
+                  <span className="text-[10px] text-slate-400 block uppercase font-bold">MONTANT TOTAL TTC</span>
+                  <span className="font-black text-white text-base font-mono">{o.total.toFixed(3)} TND</span>
+                </div>
+                {/* Sélecteur de profil admin */}
+                <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1">
+                  <span className="text-[8px] text-slate-500 font-black uppercase tracking-wider">Assigné à :</span>
+                  <select
+                    value={o.managedBy?.name?.toUpperCase() || 'NON ASSIGNÉ'}
+                    onChange={(e) => handleAssignOrder(o.id, e.target.value)}
+                    className="bg-transparent text-slate-200 font-bold text-[9px] focus:outline-none cursor-pointer uppercase"
+                  >
+                    <option value="NON ASSIGNÉ" className="bg-slate-900 text-slate-500">NON ASSIGNÉ</option>
+                    <option value="SAIF" className="bg-slate-900 text-white">SAIF</option>
+                    <option value="AMINE" className="bg-slate-900 text-white">AMINE</option>
+                    <option value="SAIFALLAH" className="bg-slate-900 text-white">SAIFALLAH</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -2147,7 +2211,7 @@ function SectionBonsEtLivraisons() {
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">ARTICLES DU BON DE COMMANDE :</span>
               {o.items?.map((item: any) => (
                 <div key={item.id} className="flex justify-between items-center border-b border-slate-800/20 pb-1.5 last:border-0 last:pb-0 mb-1.5 last:mb-0">
-                  <span className="text-slate-350 uppercase font-bold">{item.productName}</span>
+                  <span className="text-slate-355 uppercase font-bold">{item.productName}</span>
                   <span className="font-black text-slate-400 font-mono">x{item.quantity} | {item.price.toFixed(3)} TND</span>
                 </div>
               ))}
@@ -2675,6 +2739,8 @@ export default function AdminContent() {
     'recherche-four': <SectionConsultationFournisseur />,
     'comparatif': <SectionConsultationFournisseur />,
     'suivi-po': <SectionSuiviPO />,
+    'historique-achat': <SectionHistoriqueAchats />,
+    'chat-interne': <SectionChatInterne />,
     'comptabilite': <SectionComptabilite />,
     'ajouter-article': <SectionGestionArticles />,
     'modifier-article': <SectionGestionArticles />,
@@ -2686,6 +2752,559 @@ export default function AdminContent() {
   return (
     <div className="p-4 md:p-6 lg:p-8 overflow-y-auto min-h-screen">
       {sectionMap[adminSection] || <SectionReception onTreatQuote={(q) => { setSelectedQuote(q); setAdminSection('creer-devis'); }} />}
+    </div>
+  );
+}
+
+// ─── SECTION: HISTORIQUE D'ACHATS (PAR FOURNISSEUR ET PAR ARTICLE) ────────────
+function SectionHistoriqueAchats() {
+  const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeSubTab, setActiveSubTab] = useState<'supplier' | 'article'>('supplier');
+
+  // Supplier Tab States
+  const [selectedSuppId, setSelectedSuppId] = useState('');
+  const [suppSearch, setSuppSearch] = useState('');
+
+  // Article Tab States
+  const [articleSearch, setArticleSearch] = useState('');
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [selectedArticleRef, setSelectedArticleRef] = useState('');
+  const [products, setProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/suppliers').then(r => r.json()),
+      fetch('/api/purchase-orders').then(r => r.json()),
+      fetch('/api/products').then(r => r.json())
+    ]).then(([sData, poData, prodData]) => {
+      setSuppliers(sData.data || []);
+      setPurchaseOrders(poData.data || []);
+      setProducts(Array.isArray(prodData) ? prodData : prodData.data || []);
+    }).catch(err => console.error(err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Filter POs by supplier and optionally search text
+  const supplierPOs = purchaseOrders.filter(po => {
+    if (selectedSuppId && po.supplierId !== selectedSuppId) return false;
+    if (suppSearch) {
+      const s = suppSearch.toLowerCase();
+      return (
+        po.orderNumber?.toLowerCase().includes(s) ||
+        po.notes?.toLowerCase().includes(s) ||
+        po.items?.some((it: any) => 
+          it.reference?.toLowerCase().includes(s) || 
+          it.designation?.toLowerCase().includes(s)
+        )
+      );
+    }
+    return true;
+  });
+
+  // Get autocomplete suggestions for articles
+  const handleArticleSearchChange = (val: string) => {
+    setArticleSearch(val);
+    if (!val || val.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+    const filtered = products.filter(p => 
+      p.reference?.toLowerCase().includes(val.toLowerCase()) ||
+      p.name?.toLowerCase().includes(val.toLowerCase())
+    ).slice(0, 8);
+    setSuggestions(filtered);
+  };
+
+  // Find all purchase orders containing the selected article reference
+  const articlePurchases = useMemo(() => {
+    if (!selectedArticleRef) return [];
+    const list: any[] = [];
+    purchaseOrders.forEach(po => {
+      po.items?.forEach((it: any) => {
+        if (it.reference?.toLowerCase() === selectedArticleRef.toLowerCase()) {
+          list.push({
+            poNumber: po.orderNumber,
+            date: new Date(po.createdAt).toLocaleDateString('fr-FR'),
+            supplierName: po.supplier?.name || 'Fournisseur inconnu',
+            quantity: it.quantity,
+            unitPrice: it.unitPrice,
+            total: it.total
+          });
+        }
+      });
+    });
+    return list;
+  }, [selectedArticleRef, purchaseOrders]);
+
+  return (
+    <div>
+      <h2 className="text-xl font-black uppercase tracking-widest text-white mb-1 flex items-center gap-2">
+        <ClipboardList className="w-5 h-5 text-green-400" /> HISTORIQUE D'ACHATS
+      </h2>
+      <p className="text-slate-400 text-xs uppercase tracking-wider mb-5">CONSULTEZ LES ACHATS EFFECTUÉS PAR FOURNISSEUR OU PAR ARTICLE</p>
+
+      {/* Tabs */}
+      <div className="flex border-b border-slate-800 mb-6 gap-2">
+        <button
+          onClick={() => setActiveSubTab('supplier')}
+          className={`px-4 py-2 text-xs font-black uppercase tracking-wider transition-all border-b-2 ${
+            activeSubTab === 'supplier' 
+              ? 'border-red-500 text-white' 
+              : 'border-transparent text-slate-500 hover:text-slate-300'
+          }`}
+        >
+          Par Fournisseur
+        </button>
+        <button
+          onClick={() => setActiveSubTab('article')}
+          className={`px-4 py-2 text-xs font-black uppercase tracking-wider transition-all border-b-2 ${
+            activeSubTab === 'article' 
+              ? 'border-red-500 text-white' 
+              : 'border-transparent text-slate-500 hover:text-slate-300'
+          }`}
+        >
+          Par Article
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-12 text-slate-500 font-bold uppercase animate-pulse">Chargement de l'historique...</div>
+      ) : activeSubTab === 'supplier' ? (
+        <div className="space-y-6">
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <select
+              value={selectedSuppId}
+              onChange={e => setSelectedSuppId(e.target.value)}
+              className="bg-white text-black font-bold text-xs px-3 py-2.5 rounded-xl border border-slate-300 cursor-pointer"
+            >
+              <option value="">TOUS LES FOURNISSEURS</option>
+              {suppliers.map(s => (
+                <option key={s.id} value={s.id}>{s.name.toUpperCase()}</option>
+              ))}
+            </select>
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input 
+                type="text" 
+                placeholder="RECHERCHER PAR N° BON, RÉFÉRENCE OU DÉSIGNATION DE PIÈCE..."
+                value={suppSearch}
+                onChange={e => setSuppSearch(e.target.value)}
+                className="w-full bg-white text-black font-semibold pl-10 pr-4 py-2.5 rounded-xl text-sm border border-slate-300 focus:outline-none focus:border-red-500 uppercase placeholder:normal-case placeholder:font-normal" 
+              />
+            </div>
+          </div>
+
+          {/* Supplier POs List */}
+          <div className="space-y-4">
+            {supplierPOs.length === 0 ? (
+              <div className="text-center py-10 text-slate-600 font-bold uppercase">Aucune commande d'achat trouvée</div>
+            ) : (
+              supplierPOs.map(po => (
+                <div key={po.id} className={cardCls}>
+                  <div className="flex justify-between items-center border-b border-slate-800 pb-3 mb-3">
+                    <div>
+                      <span className="font-mono text-green-400 font-black text-sm uppercase">#{po.orderNumber}</span>
+                      <h4 className="font-black text-white uppercase text-xs mt-0.5">Fournisseur : {po.supplier?.name?.toUpperCase()}</h4>
+                      <p className="text-[10px] text-slate-500">Date : {new Date(po.createdAt).toLocaleDateString('fr-FR')} · Statut : {po.status}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[9px] text-slate-500 uppercase font-black">Montant Total HT</p>
+                      <p className="font-black text-white font-mono text-sm">{po.totalAmount.toFixed(3)} TND</p>
+                    </div>
+                  </div>
+                  
+                  {/* Items */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="text-[9px] text-slate-500 font-black uppercase tracking-wider border-b border-slate-850">
+                          <th className="py-2">Réf. pièce</th>
+                          <th className="py-2">Désignation</th>
+                          <th className="py-2 text-center">Quantité</th>
+                          <th className="py-2 text-right">Prix Unit. HT</th>
+                          <th className="py-2 text-right">Total HT</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {po.items?.map((it: any) => (
+                          <tr key={it.id} className="border-b border-slate-850/30 text-slate-300">
+                            <td className="py-2 font-mono font-bold text-red-400">{it.reference?.toUpperCase()}</td>
+                            <td className="py-2 uppercase font-medium">{it.designation}</td>
+                            <td className="py-2 text-center font-mono">{it.quantity}</td>
+                            <td className="py-2 text-right font-mono">{it.unitPrice.toFixed(3)} TND</td>
+                            <td className="py-2 text-right font-mono font-bold text-white">{it.total.toFixed(3)} TND</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Article Search Input */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="SAISISSEZ UNE RÉFÉRENCE OU DÉSIGNATION DE PIÈCE..."
+              value={articleSearch}
+              onChange={e => handleArticleSearchChange(e.target.value)}
+              className="w-full bg-white text-black font-semibold pl-10 pr-4 py-3 rounded-xl text-sm border border-slate-300 focus:outline-none focus:border-red-500 uppercase placeholder:normal-case"
+            />
+
+            {/* Suggestions Dropdown */}
+            {suggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 bg-slate-900 border border-slate-800 rounded-xl mt-2 overflow-hidden shadow-2xl z-50">
+                {suggestions.map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      setSelectedArticleRef(p.reference || '');
+                      setArticleSearch(p.reference ? `${p.reference} - ${p.name}` : p.name);
+                      setSuggestions([]);
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-slate-800 text-xs font-semibold border-b border-slate-800/50 last:border-0 text-slate-300 hover:text-white flex justify-between"
+                  >
+                    <span className="uppercase">{p.name}</span>
+                    <span className="font-mono text-red-400 uppercase font-black">{p.reference}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Article Purchases Table */}
+          {selectedArticleRef ? (
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-800 pb-2 flex justify-between">
+                <span>HISTORIQUE DES ACHATS POUR LA RÉFÉRENCE :</span>
+                <span className="text-red-400 font-mono">#{selectedArticleRef.toUpperCase()}</span>
+              </h3>
+
+              {articlePurchases.length === 0 ? (
+                <p className="text-slate-500 font-bold text-center py-6 uppercase text-xs">Aucun achat enregistré pour cette pièce</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-850 text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                        <th className="py-2">Date d'achat</th>
+                        <th className="py-2">Fournisseur</th>
+                        <th className="py-2">N° Bon Commande</th>
+                        <th className="py-2 text-center">Quantité</th>
+                        <th className="py-2 text-right">Prix Unit. HT</th>
+                        <th className="py-2 text-right">Total HT</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {articlePurchases.map((ap, idx) => (
+                        <tr key={idx} className="border-b border-slate-850/30 hover:bg-slate-800/10 text-slate-300">
+                          <td className="py-2 font-medium">{ap.date}</td>
+                          <td className="py-2 font-bold uppercase">{ap.supplierName}</td>
+                          <td className="py-2 font-mono text-green-400 font-bold">#{ap.poNumber}</td>
+                          <td className="py-2 text-center font-mono">{ap.quantity}</td>
+                          <td className="py-2 text-right font-mono">{ap.unitPrice.toFixed(3)} TND</td>
+                          <td className="py-2 text-right font-mono font-bold text-white">{ap.total.toFixed(3)} TND</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-slate-900/20 border border-slate-850 border-dashed rounded-3xl text-slate-500 font-bold uppercase text-xs">
+              Veuillez sélectionner un article ci-dessus pour consulter ses achats
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── SECTION: CHAT INTERNE CLIENT-ADMIN ──────────────────────────────────────
+function SectionChatInterne() {
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [reply, setReply] = useState('');
+  const [loadingConv, setLoadingConv] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [attachment, setAttachment] = useState<{ name: string; data: string; type: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const fetchConversations = () => {
+    fetch('/api/chat')
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          setConversations(res.data || []);
+        }
+      })
+      .catch(err => console.error(err))
+      .finally(() => setLoadingConv(false));
+  };
+
+  const fetchMessages = (userId: string) => {
+    fetch(`/api/chat?userId=${userId}`)
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          setMessages(res.data || []);
+        }
+      })
+      .catch(err => console.error(err));
+  };
+
+  useEffect(() => {
+    fetchConversations();
+    const interval = setInterval(fetchConversations, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedUserId) return;
+    fetchMessages(selectedUserId);
+    const interval = setInterval(() => fetchMessages(selectedUserId), 2000);
+    return () => clearInterval(interval);
+  }, [selectedUserId]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Le fichier ne doit pas dépasser 5 Mo');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAttachment({
+        name: file.name,
+        data: reader.result as string,
+        type: file.type
+      });
+    };
+    reader.readAsDataURL(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleSendReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if ((!reply.trim() && !attachment) || !selectedUserId) return;
+
+    setSending(true);
+    try {
+      const activeProfile = localStorage.getItem('activeAdminProfile') || undefined;
+      
+      let messageContent = reply;
+      if (attachment) {
+        messageContent = reply ? `${reply}\n\n📎 ${attachment.name}` : `📎 ${attachment.name}`;
+      }
+
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: messageContent,
+          userId: selectedUserId,
+          senderName: activeProfile,
+          attachment: attachment ? { name: attachment.name, data: attachment.data, type: attachment.type } : undefined
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessages(prev => [...prev, data.data]);
+        setReply('');
+        setAttachment(null);
+        fetchConversations(); // refresh list
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const activeConv = conversations.find(c => c.userId === selectedUserId);
+
+  return (
+    <div className="h-[calc(100vh-120px)] flex bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
+      {/* Sidebar des conversations */}
+      <div className="w-1/3 border-r border-slate-800/80 bg-slate-950/40 flex flex-col">
+        <div className="p-4 border-b border-slate-800 bg-slate-950/60">
+          <h3 className="text-white text-xs font-black uppercase tracking-widest">CONVERSATIONS</h3>
+          <p className="text-[9px] text-slate-500 uppercase font-bold mt-1">SÉLECTIONNEZ UN CLIENT POUR LUI RÉPONDRE</p>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto divide-y divide-slate-800/50">
+          {loadingConv ? (
+            <div className="text-center py-10 text-slate-500 font-bold uppercase tracking-wider text-[10px] animate-pulse">Chargement...</div>
+          ) : conversations.length === 0 ? (
+            <div className="text-center py-10 text-slate-600 font-bold uppercase tracking-wider text-[10px]">Aucun message</div>
+          ) : (
+            conversations.map(c => {
+              const isSelected = c.userId === selectedUserId;
+              const userName = c.user?.name || `${c.user?.firstName || ''} ${c.user?.lastName || ''}`.trim() || 'Client';
+              const hasUnread = c.lastMessage && !c.lastMessage.isAdmin;
+              return (
+                <button
+                  key={c.userId}
+                  onClick={() => setSelectedUserId(c.userId)}
+                  className={`w-full text-left p-4 transition-colors flex flex-col gap-1.5 ${
+                    isSelected ? 'bg-red-650/10 border-l-4 border-red-500 bg-slate-850/30' : 'hover:bg-slate-800/20'
+                  }`}
+                >
+                  <div className="flex justify-between items-start w-full">
+                    <div className="flex items-center gap-2">
+                      {hasUnread && !isSelected && (
+                        <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse flex-shrink-0" />
+                      )}
+                      <span className={`font-black text-xs uppercase truncate max-w-[70%] ${hasUnread && !isSelected ? 'text-cyan-400' : 'text-white'}`}>{userName}</span>
+                    </div>
+                    <span className="text-[8px] text-slate-500 font-mono">
+                      {c.lastMessage ? new Date(c.lastMessage.createdAt).toLocaleDateString('fr-FR') : ''}
+                    </span>
+                  </div>
+                  <p className={`text-[10px] truncate w-full uppercase ${hasUnread && !isSelected ? 'text-cyan-300 font-bold' : 'text-slate-400'}`}>
+                    {c.lastMessage?.content || 'Aucun message'}
+                  </p>
+                </button>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* Fenêtre de chat */}
+      <div className="flex-1 flex flex-col bg-slate-900">
+        {selectedUserId ? (
+          <>
+            {/* User Header */}
+            <div className="p-4 bg-slate-950/40 border-b border-slate-800 flex justify-between items-center">
+              <div>
+                <h4 className="text-white text-xs font-black uppercase tracking-wider">
+                  {activeConv?.user?.name || `${activeConv?.user?.firstName || ''} ${activeConv?.user?.lastName || ''}`.trim() || 'Client'}
+                </h4>
+                <p className="text-[9px] text-slate-500 font-bold mt-0.5">{activeConv?.user?.email}</p>
+              </div>
+            </div>
+
+            {/* Messages Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {messages.map(msg => (
+                <div
+                  key={msg.id}
+                  className={`flex flex-col ${msg.isAdmin ? 'items-end' : 'items-start'}`}
+                >
+                  <div
+                    className={`max-w-[70%] rounded-2xl px-4 py-3 text-xs ${
+                      msg.isAdmin
+                        ? 'bg-red-650 text-white rounded-tr-none shadow shadow-red-500/20'
+                        : 'bg-slate-800 text-slate-100 rounded-tl-none'
+                    }`}
+                  >
+                    {msg.reference && (
+                      <div className="bg-black/35 rounded-lg px-2.5 py-1 mb-1.5 font-mono text-[9px] text-orange-300 font-black uppercase">
+                        Réf concernée : {msg.reference}
+                      </div>
+                    )}
+                    <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                    {msg.attachmentData && (
+                      <div className="mt-2">
+                        {msg.attachmentType?.startsWith('image/') ? (
+                          <img src={msg.attachmentData} alt={msg.attachmentName || 'Attachment'} className="max-w-[200px] rounded-lg border border-slate-700/50" />
+                        ) : (
+                          <a href={msg.attachmentData} download={msg.attachmentName || 'download'} className="flex items-center gap-1.5 px-3 py-2 bg-black/20 hover:bg-black/30 rounded-lg transition text-xs font-semibold text-white">
+                            <Paperclip className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span className="truncate max-w-[150px]">{msg.attachmentName || 'Pièce jointe'}</span>
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-[8px] text-slate-500 mt-1 uppercase font-black">
+                    {msg.senderName} · {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Attachment preview */}
+            {attachment && (
+              <div className="px-6 py-2 bg-slate-950/40 border-t border-slate-800 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-[10px]">
+                  <Paperclip className="w-3.5 h-3.5 text-cyan-400" />
+                  <span className="text-slate-300 font-bold uppercase truncate max-w-[300px]">{attachment.name}</span>
+                </div>
+                <button
+                  onClick={() => setAttachment(null)}
+                  className="text-red-400 hover:text-red-300 transition"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Reply Form */}
+            <form
+              onSubmit={handleSendReply}
+              className="p-4 border-t border-slate-800/80 bg-slate-950/20 flex gap-3 items-center"
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+                className="hidden"
+                onChange={handleFileSelect}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="p-3 text-slate-500 hover:text-cyan-400 transition rounded-xl hover:bg-slate-800/50"
+                title="Joindre un fichier"
+              >
+                <Paperclip className="w-5 h-5" />
+              </button>
+              <input
+                type="text"
+                placeholder="Saisissez votre réponse..."
+                value={reply}
+                onChange={e => setReply(e.target.value)}
+                className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500 uppercase placeholder:normal-case font-semibold"
+                disabled={sending}
+              />
+              <button
+                type="submit"
+                disabled={sending || (!reply.trim() && !attachment)}
+                className="px-5 py-3 bg-red-650 hover:bg-red-600 text-white font-black text-xs uppercase rounded-xl transition flex items-center gap-1.5 disabled:opacity-40"
+              >
+                <Send className="w-3.5 h-3.5" /> Répondre
+              </button>
+            </form>
+          </>
+        ) : (
+          <div className="h-full flex flex-col items-center justify-center text-center p-6">
+            <MessageSquare className="w-12 h-12 text-slate-700 mb-2" />
+            <p className="text-slate-500 text-xs font-black uppercase tracking-widest">Aucune conversation sélectionnée</p>
+            <p className="text-slate-650 text-[10px] uppercase font-bold mt-1">Sélectionnez un client dans la liste pour voir les messages et répondre.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

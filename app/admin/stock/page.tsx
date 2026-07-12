@@ -19,6 +19,7 @@ interface StockItem {
   price: number;      // PRIX VENTE (visible client)
   sku: string;
   status: string;
+  images?: string[];
 }
 
 export default function AdminStockPage() {
@@ -301,6 +302,22 @@ export default function AdminStockPage() {
                   />
                 </div>
               ))}
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">PHOTO (OPTIONNEL)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = () => setNewItem(prev => ({ ...prev, images: [reader.result as string] }));
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="w-full bg-slate-950 text-slate-400 text-[10px] p-2 rounded-lg border border-slate-800 file:bg-slate-800 file:text-white file:border-0 file:rounded file:px-2 file:py-1 file:mr-2 file:cursor-pointer"
+                />
+              </div>
             </div>
             <div className="flex gap-2 justify-end">
               <button onClick={() => setShowAddForm(false)} className="px-4 py-2 text-xs bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition">Annuler</button>

@@ -70,7 +70,8 @@ export async function POST(req: NextRequest) {
       items,
       fileBase64,
       fileFormat,
-      fileName
+      fileName,
+      photoName
     } = body;
 
     if (!clientName || !clientEmail) {
@@ -105,10 +106,20 @@ export async function POST(req: NextRequest) {
     try {
       const itemsListText = (items || []).map((item: any) => `<li>${item.designation} (Réf: ${item.reference || 'N/A'}) x ${item.quantity}</li>`).join('');
       
-      const attachments = fileBase64 && fileName ? [{
-        filename: fileName,
-        content: fileBase64
-      }] : [];
+      const attachments: any[] = [];
+      if (fileBase64 && fileName) {
+        attachments.push({
+          filename: fileName,
+          content: Buffer.from(fileBase64, 'base64')
+        });
+      }
+      if (photo && photo.includes('base64,')) {
+        const base64Data = photo.split(',')[1];
+        attachments.push({
+          filename: photoName || `photo-${Date.now()}.jpg`,
+          content: Buffer.from(base64Data, 'base64')
+        });
+      }
 
       await sendEmail({
         to: [clientEmail, 'comptoir.distribution@autop.tn'],

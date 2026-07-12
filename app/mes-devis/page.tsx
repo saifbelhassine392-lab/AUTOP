@@ -68,9 +68,11 @@ export default function MesDevisPage() {
             discount: it.discount || 0
           }))
         })),
-        ...(Array.isArray(quotesData) ? quotesData : []).map((q: any) => ({
-          id: q.id,
-          date: new Date(q.createdAt).toLocaleDateString('fr-FR'),
+        ...(Array.isArray(quotesData) ? quotesData : [])
+          .filter((q: any) => q.status !== 'TREATED')
+          .map((q: any) => ({
+            id: q.id,
+            date: new Date(q.createdAt).toLocaleDateString('fr-FR'),
           brand: q.brand || 'Générique',
           model: q.model || 'N/A',
           vin: q.vin || '',
@@ -812,31 +814,7 @@ export default function MesDevisPage() {
                 </div>
               </div>
 
-              {/* Mode de paiement */}
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">MODE DE PAIEMENT *</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { id: 'CASH_ON_DELIVERY', label: 'A LA LIVRAISON' },
-                    { id: 'BANK_TRANSFER', label: 'VIREMENT BANCAIRE' }
-                  ].map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setPaymentMethod(p.id as any)}
-                      className={`py-2.5 rounded-xl text-[9px] font-black tracking-wider transition border ${
-                        paymentMethod === p.id
-                          ? 'bg-red-650 border-red-500 text-white shadow'
-                          : 'bg-slate-950 border-slate-800 text-slate-450 hover:text-slate-200'
-                      }`}
-                    >
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Note / Remarque client */}
+            {/* Note / Remarque client */}
               <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">NOTE / INSTRUCTIONS PARTICULIÈRES (OPTIONNEL)</label>
                 <textarea

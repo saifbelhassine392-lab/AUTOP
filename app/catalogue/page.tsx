@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { MessageSquare } from 'lucide-react';
 
 export default function CustomerCatalogue() {
   const [products, setProducts] = useState<any[]>([]);
@@ -20,7 +21,7 @@ export default function CustomerCatalogue() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-6 mb-6 gap-4">
         <div>
           <h1 className="text-xl font-bold text-white">🗂️ Catalogue Général Articles</h1>
-          <p className="text-xs text-slate-400 mt-1">Disponibilités et Tarifs de Vente indicatifs HT</p>
+          <p className="text-xs text-slate-400 mt-1">Disponibilités sur Demande</p>
         </div>
         <input type="text" placeholder="Rechercher une pièce..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full md:w-80 bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 outline-none focus:border-red-500" />
       </div>
@@ -38,8 +39,20 @@ export default function CustomerCatalogue() {
               <h3 className="text-sm font-bold text-slate-200 mb-4">{product.name}</h3>
             </div>
             <div className="border-t border-slate-800/60 pt-3 flex justify-between items-center">
-              <span className="text-[11px] text-slate-500">Prix de Vente HT</span>
-              <span className="text-base font-black text-white font-mono">{(product.price || 0).toFixed(3)} DT</span>
+              <span className="text-[11px] text-slate-500 font-bold">PRIX DE VENTE</span>
+              <button
+                onClick={() => {
+                  window.dispatchEvent(
+                    new CustomEvent('open-chat', {
+                      detail: { reference: product.reference, name: product.name }
+                    })
+                  );
+                }}
+                className="p-1.5 bg-red-650 hover:bg-red-600 text-white rounded-lg transition flex items-center gap-1.5 text-[9px] font-black uppercase"
+                title="Demander le prix par Chat"
+              >
+                <MessageSquare className="w-3.5 h-3.5" /> CHAT
+              </button>
             </div>
           </div>
         ))}

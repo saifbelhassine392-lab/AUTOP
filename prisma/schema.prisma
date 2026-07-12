@@ -53,6 +53,7 @@ model User {
   cartItems     CartItem[]
   addresses     Address[]
   reviews       Review[]
+  chatMessages  ChatMessage[]
 }
 
 model VerificationToken {
@@ -192,6 +193,8 @@ model Order {
   updatedAt       DateTime             @updatedAt
   items           OrderItem[]
   statusHistory   OrderStatusHistory[]
+  managedById     String?
+  managedBy       AdminProfile?        @relation(fields: [managedById], references: [id])
 }
 
 model OrderItem {
@@ -231,6 +234,8 @@ model Devis {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   items        DevisItem[]
+  managedById  String?
+  managedBy    AdminProfile? @relation(fields: [managedById], references: [id])
 }
 
 model DevisItem {
@@ -292,8 +297,11 @@ enum QuoteStatus {
 model AdminProfile {
   id        String   @id @default(cuid())
   name      String   @unique
+  password  String?
   createdAt DateTime @default(now())
   quotes    Quote[]
+  devis     Devis[]
+  orders    Order[]
 }
 
 model Quote {
@@ -362,4 +370,19 @@ model Review {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   @@unique([userId, productId])
+}
+
+model ChatMessage {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  senderId   String
+  senderName String
+  isAdmin    Boolean  @default(false)
+  content        String
+  reference      String?
+  attachmentData String?  @db.Text
+  attachmentName String?
+  attachmentType String?
+  createdAt      DateTime @default(now())
 }

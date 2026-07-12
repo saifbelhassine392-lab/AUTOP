@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useCart } from '@/contexts/CartContext'
-import { Search, ShoppingCart, Filter } from 'lucide-react'
+import { Search, ShoppingCart, Filter, MessageSquare } from 'lucide-react'
 import Image from 'next/image'
 
 interface Product {
@@ -134,11 +134,21 @@ export default function PiecesPage() {
                   <h3 className="font-bold text-slate-100 text-sm mb-3 line-clamp-2">{product.name}</h3>
                 </div>
                 <div>
-                  <div className="flex items-baseline gap-2 mb-3">
-                    <span className="text-lg font-black text-red-500 font-mono">{product.price.toFixed(2)} TND</span>
-                    {product.oldPrice && product.oldPrice > product.price && (
-                      <span className="text-xs text-slate-500 line-through font-mono">{product.oldPrice.toFixed(2)} TND</span>
-                    )}
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xs font-bold text-slate-400">PRIX SUR DEMANDE</span>
+                    <button
+                      onClick={() => {
+                        window.dispatchEvent(
+                          new CustomEvent('open-chat', {
+                            detail: { reference: product.reference, name: product.name }
+                          })
+                        );
+                      }}
+                      className="p-1.5 bg-red-650 hover:bg-red-600 text-white rounded-lg transition"
+                      title="Demander le prix par Chat"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                   <div className="flex items-center justify-between mb-4">
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${product.stock > 0 ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
