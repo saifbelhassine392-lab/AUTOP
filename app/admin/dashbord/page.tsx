@@ -12,6 +12,7 @@ export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [activeProfile, setActiveProfile] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Nouveaux états d'authentification
   const [selectedProfName, setSelectedProfName] = useState<string | null>(null);
@@ -284,8 +285,6 @@ export default function AdminDashboard() {
       </div>
     );
   }
-
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-slate-950 flex text-white antialiased overflow-hidden">
