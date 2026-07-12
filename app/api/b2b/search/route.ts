@@ -102,7 +102,7 @@ async function scrapeSTEQ(query: string) {
 
   } catch (err: any) {
     console.error("STEQ Scrape Error:", err);
-    return { price: 0, discount: 0, availability: "Erreur Connexion" };
+    return { price: 0, discount: 0, availability: `Erreur: ${err.message}` };
   }
 }
 
@@ -135,7 +135,8 @@ export async function POST(request: Request) {
         discount: res.discount,
         available: (res.rawStock ?? 0) > 0 || res.availability === "Disponible",
         stock: res.rawStock,
-        availability: res.availability
+        availability: res.availability,
+        items: (res as any).items
       };
     }
     else if (supName === "FAD") searchResult = { error: "Scraper FAD en cours d'intégration." };

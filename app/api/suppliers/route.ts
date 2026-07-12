@@ -32,6 +32,11 @@ export async function POST(req: NextRequest) {
 
     if (!name) return NextResponse.json({ error: 'Nom requis' }, { status: 400 });
 
+    const existing = await prisma.supplier.findFirst({ where: { name: { equals: name, mode: 'insensitive' } } });
+    if (existing) {
+      return NextResponse.json({ error: `Le fournisseur "${name}" existe déjà !` }, { status: 400 });
+    }
+
     const supplier = await prisma.supplier.create({
       data: { name, contactName, phone, email, address, city, b2bUrl, b2bLogin, b2bPassword }
     });
@@ -66,12 +71,12 @@ export async function PATCH(req: NextRequest) {
     if (!user || user.role !== 'ADMIN') return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
 
     const body = await req.json();
-    const { id, name, contactName, phone, email, address, city, isActive } = body;
+    const { id, name, contactName, phone, email, address, city, isActive, b2bUrl, b2bLogin, b2bPassword } = body;
     if (!id) return NextResponse.json({ error: 'ID requis' }, { status: 400 });
 
     const updated = await prisma.supplier.update({
       where: { id },
-      data: { name, contactName, phone, email, address, city, isActive }
+      data: { name, contactName, phone, email, address, city, isActive, b2bUrl, b2bLogin, b2bPassword }
     });
     return NextResponse.json({ success: true, data: updated });
   } catch (err) {

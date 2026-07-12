@@ -747,7 +747,26 @@ function SectionListeFournisseurs() {
                 <label className={labelCls}>VILLE</label>
                 <input type="text" value={editingSupplier.city || ''} onChange={e => setEditingSupplier({ ...editingSupplier, city: e.target.value })} className={inputCls} />
               </div>
-              <div className="flex items-center gap-2 mt-2">
+
+              <div className="pt-4 mt-2 border-t border-slate-800">
+                <h4 className="text-[10px] font-black text-cyan-500 uppercase tracking-widest mb-3">ACCÈS B2B (MÉMO ET ROBOT)</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className={labelCls}>LIEN DU SITE B2B</label>
+                    <input type="url" placeholder="https://" value={editingSupplier.b2bUrl || ''} onChange={e => setEditingSupplier({ ...editingSupplier, b2bUrl: e.target.value })} className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>LOGIN / UTILISATEUR</label>
+                    <input type="text" value={editingSupplier.b2bLogin || ''} onChange={e => setEditingSupplier({ ...editingSupplier, b2bLogin: e.target.value })} className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>MOT DE PASSE B2B</label>
+                    <input type="text" value={editingSupplier.b2bPassword || ''} onChange={e => setEditingSupplier({ ...editingSupplier, b2bPassword: e.target.value })} className={inputCls} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-800">
                 <input type="checkbox" checked={editingSupplier.isActive} onChange={e => setEditingSupplier({ ...editingSupplier, isActive: e.target.checked })} id="edit-supplier-active" className="rounded" />
                 <label htmlFor="edit-supplier-active" className="font-bold text-white uppercase select-none">FOURNISSEUR ACTIF</label>
               </div>
