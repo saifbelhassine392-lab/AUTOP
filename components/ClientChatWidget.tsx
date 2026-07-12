@@ -104,8 +104,8 @@ export default function ClientChatWidget() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Le fichier ne doit pas dépasser 5 Mo');
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Le fichier ne doit pas dépasser 2 Mo');
       return;
     }
     const reader = new FileReader();

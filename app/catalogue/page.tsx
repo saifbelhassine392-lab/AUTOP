@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Home } from 'lucide-react';
+import Link from 'next/link';
 
 export default function CustomerCatalogue() {
   const [products, setProducts] = useState<any[]>([]);
@@ -18,6 +19,9 @@ export default function CustomerCatalogue() {
 
   return (
     <div className="max-w-6xl mx-auto p-6 bg-[#0a0e1a] min-h-screen mt-6">
+      <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 hover:text-white hover:border-red-500 transition mb-6 font-bold text-sm">
+        <Home className="w-4 h-4" /> Accueil
+      </Link>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-6 mb-6 gap-4">
         <div>
           <h1 className="text-xl font-bold text-white">🗂️ Catalogue Général Articles</h1>

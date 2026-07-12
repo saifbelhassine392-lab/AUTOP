@@ -6,7 +6,7 @@ import { useCart } from "@/contexts/CartContext"
 import Link from "next/link"
 import { 
   Download, CheckCircle, MessageCircle, FileText, 
-  Plus, FileSpreadsheet, ClipboardList, Package, Receipt, X, Search
+  Plus, FileSpreadsheet, ClipboardList, Package, Receipt, X, Search, Home
 } from 'lucide-react'
 
 export default function MesDevisPage() {
@@ -441,7 +441,9 @@ export default function MesDevisPage() {
   return (
     <div className="min-h-screen bg-[#070b13] text-white py-12 px-4">
       <div className="max-w-6xl mx-auto">
-        
+        <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 hover:text-white hover:border-red-500 transition mb-6 font-bold text-sm">
+          <Home className="w-4 h-4" /> Accueil
+        </Link>
         {/* Header Espace Client */}
         <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center mb-10 border-b border-slate-800/80 pb-6">
           <div>

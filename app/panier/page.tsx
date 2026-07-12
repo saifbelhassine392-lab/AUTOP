@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { 
   Trash2, Plus, Minus, CreditCard, Truck, 
-  ShoppingBag, ArrowLeft, CheckCircle, Store, MessageSquare
+  ShoppingBag, ArrowLeft, CheckCircle, Store, MessageSquare, Home
 } from 'lucide-react'
 import Image from 'next/image'
 
@@ -162,9 +162,14 @@ export default function PanierPage() {
   return (
     <div className="min-h-screen bg-[#070b13] text-white py-12 px-4">
       <div className="max-w-6xl mx-auto">
-        <Link href="/pieces" className="inline-flex items-center gap-2 text-xs font-bold text-red-500 hover:text-red-400 uppercase tracking-widest mb-8 transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Retourner au Catalogue
-        </Link>
+        <div className="flex gap-4 mb-8">
+          <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 hover:text-white hover:border-red-500 transition font-bold text-sm">
+            <Home className="w-4 h-4" /> Accueil
+          </Link>
+          <Link href="/pieces" className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 hover:text-white hover:border-red-500 transition font-bold text-sm">
+            <ArrowLeft className="w-4 h-4" /> Retourner au Catalogue
+          </Link>
+        </div>
 
         <h1 className="text-3xl font-black tracking-widest text-3d-neon uppercase mb-8">
           VOTRE PANIER D'ACHATS

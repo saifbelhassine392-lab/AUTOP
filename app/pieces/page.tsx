@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useCart } from '@/contexts/CartContext'
-import { Search, ShoppingCart, Filter, MessageSquare } from 'lucide-react'
+import { Search, ShoppingCart, Filter, MessageSquare, Home } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
 
 interface Product {
   id: string
@@ -58,6 +59,9 @@ export default function PiecesPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 text-slate-100 bg-[#0a0e1a] min-h-screen">
+      <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 hover:text-white hover:border-red-500 transition mb-6 font-bold text-sm">
+        <Home className="w-4 h-4" /> Accueil
+      </Link>
       <h1 className="text-3xl font-black mb-8 tracking-tight">Catalogue de Pièces</h1>
 
       {/* Filtres */}

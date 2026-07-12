@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Download, CheckCircle, MessageCircle, FileText, Plus, FileSpreadsheet } from 'lucide-react';
+import { Download, CheckCircle, MessageCircle, FileText, Plus, FileSpreadsheet, Home } from 'lucide-react';
+import Link from 'next/link';
 
 export default function DevisPage() {
   const [clientName, setClientName] = useState('');
@@ -409,6 +410,9 @@ export default function DevisPage() {
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-[#0a0e1a] min-h-screen text-slate-100">
+      <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 hover:text-white hover:border-red-500 transition mb-6 font-bold text-sm">
+        <Home className="w-4 h-4" /> Accueil
+      </Link>
       <h1 className="text-3xl font-black mb-8 tracking-tight text-white border-b border-slate-800 pb-4">
         Formulaire de Devis
       </h1>
