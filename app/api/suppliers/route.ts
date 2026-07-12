@@ -36,9 +36,9 @@ export async function POST(req: NextRequest) {
       data: { name, contactName, phone, email, address, city, b2bUrl, b2bLogin, b2bPassword }
     });
     return NextResponse.json({ success: true, data: supplier }, { status: 201 });
-  } catch (err) {
+  } catch (err: any) {
     console.error('Supplier POST error:', err);
-    return NextResponse.json({ error: 'Erreur création fournisseur' }, { status: 500 });
+    return NextResponse.json({ error: `Erreur: ${err.message}` }, { status: 500 });
   }
 }
 
