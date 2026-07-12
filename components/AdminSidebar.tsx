@@ -110,7 +110,7 @@ const sections: SidebarSection[] = [
   }
 ];
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ isOpen = false, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const { adminSection, setAdminSection } = useApp();
   const { data: session } = useSession();
   const user = session?.user as any;
@@ -187,7 +187,16 @@ export default function AdminSidebar() {
   };
 
   return (
-    <aside className="carbon-pattern border-r border-red-600/20 w-[260px] hidden md:flex flex-col overflow-hidden h-screen sticky top-0 shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+          onClick={onClose}
+        />
+      )}
+      
+      <aside className={`carbon-pattern border-r border-red-600/20 w-[260px] flex-col overflow-hidden h-screen z-50 shadow-[4px_0_24px_rgba(0,0,0,0.5)] transition-transform duration-300 ease-in-out fixed inset-y-0 left-0 md:sticky md:top-0 md:flex ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
       {/* Logo Header */}
       <div className="flex flex-col items-center justify-center py-5 px-4 border-b border-slate-800/85 bg-slate-950/70 backdrop-blur-md">
         <div className="w-32 h-16 relative mb-2">
@@ -267,5 +276,6 @@ export default function AdminSidebar() {
         </button>
       </div>
     </aside>
+    </>
   );
 }

@@ -117,7 +117,7 @@ export async function POST(request: Request) {
       searchResult = {
         price: res.price,
         discount: res.discount,
-        available: res.rawStock > 0 || res.availability === "Disponible",
+        available: (res.rawStock ?? 0) > 0 || res.availability === "Disponible",
         stock: res.rawStock
       };
     }

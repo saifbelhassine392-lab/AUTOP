@@ -14,7 +14,7 @@ import {
 // ─── Input style helper ───────────────────────────────────────────────────────
 const inputCls = "w-full bg-white text-black font-semibold text-sm px-3 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-red-500 uppercase placeholder:text-slate-400 placeholder:font-normal placeholder:normal-case";
 const labelCls = "block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1";
-const cardCls = "bg-slate-900 border border-slate-800 rounded-2xl p-5 mb-4";
+const cardCls = "bg-slate-900 border border-slate-800 rounded-xl md:rounded-2xl p-4 md:p-5 mb-4 w-full";
 
 // ─── SECTION: RÉCEPTION DEMANDES ──────────────────────────────────────────────
 interface SectionReceptionProps {
