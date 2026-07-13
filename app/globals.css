@@ -7,7 +7,7 @@
     @apply border-slate-800;
   }
   body {
-    @apply bg-[#0a0e1a] text-slate-100 antialiased;
+    @apply bg-white text-[#333333] antialiased;
     text-transform: uppercase;
   }
   input[type="password"] {
@@ -166,4 +166,25 @@
   text-shadow: 1px 1px 0px #1e293b,
                2px 2px 0px #0f172a,
                3px 3px 4px rgba(0,0,0,0.6);
+}
+
+/* --- OVERRIDE GLOBAL BACKGROUND TO WHITE --- */
+/* Forcer le fond blanc sur tous les conteneurs sombres existants sans toucher au HTML */
+[class*="bg-slate-9"], [class*="bg-slate-8"], [class*="bg-[#0a0e1a]"] {
+  background-color: #ffffff !important;
+}
+
+/* Forcer les fonds semi-transparents sombres à devenir transparents ou clairs */
+[class*="bg-slate-9"][class*="\/"], [class*="bg-slate-8"][class*="\/"] {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Forcer les textes blancs à devenir sombres pour rester lisibles sur fond blanc */
+[class*="text-white"], [class*="text-slate-1"], [class*="text-slate-2"], [class*="text-slate-3"], [class*="text-slate-4"], [class*="text-slate-5"] {
+  color: #333333 !important;
+}
+
+/* Ajuster les bordures sombres pour qu'elles se voient sur le fond blanc */
+[class*="border-slate-8"], [class*="border-slate-7"], [class*="border-slate-9"] {
+  border-color: #e2e8f0 !important;
 }

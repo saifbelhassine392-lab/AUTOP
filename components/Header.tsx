@@ -30,10 +30,9 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 relative flex items-center justify-center">
-              <img src="/logo.png" alt="AUTOP Logo" className="max-h-full max-w-full object-contain" />
+            <div className="w-40 h-16 relative flex items-center justify-start">
+              <img src="/logo.png" alt="AUTOP Logo" className="h-full w-auto object-contain" />
             </div>
-            <span className="text-2xl font-black tracking-wider text-red-500">AUTOP</span>
           </Link>
 
           {/* Desktop Nav */}

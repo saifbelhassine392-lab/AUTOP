@@ -1,95 +1,12 @@
 import Link from 'next/link'
-import { Mail, Phone, MapPin, ShieldCheck, Truck, Zap, Award } from 'lucide-react'
+import { Mail, Phone, MapPin, ShieldCheck, Truck, Zap, Award, Settings, CarFront } from 'lucide-react'
+import { HomeSlider } from '@/components/HomeSlider'
 
 export default function AccueilPage() {
   return (
     <div className="text-white min-h-screen">
       
-      {/* Hero / Presentation Section with full-width background */}
-      <div className="relative w-full overflow-hidden bg-slate-950 py-16 md:py-28 border-b border-slate-900">
-        {/* Background Image Container with Overlay */}
-        <div className="absolute inset-0 z-0">
-          <img 
-            src="/bg_hero.png" 
-            alt="AUTOP background" 
-            className="w-full h-full object-cover opacity-20 object-center"
-          />
-          {/* Gradient overlays to blend backgrounds and ensure text readability */}
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/60 via-slate-950/80 to-slate-950" />
-          <div className="absolute inset-0 bg-gradient-to-r from-red-650/10 via-transparent to-red-650/10" />
-        </div>
-
-        {/* Floating 3D Graphic Shapes (Brake Disc, Piston, Spark Plug) */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0 select-none opacity-20 hidden md:block">
-          {/* Brake Disc floating 3D */}
-          <div className="absolute right-[8%] top-[15%] w-44 h-44 float-3d-fast">
-            <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="1.2" className="text-red-500 w-full h-full">
-              <circle cx="50" cy="50" r="45" strokeDasharray="6 3" />
-              <circle cx="50" cy="50" r="30" />
-              <circle cx="50" cy="50" r="15" />
-              <line x1="50" y1="5" x2="50" y2="95" />
-              <line x1="5" y1="50" x2="95" y2="50" />
-              <path d="M20 20 L80 80 M80 20 L20 80" />
-            </svg>
-          </div>
-          {/* Piston floating 3D */}
-          <div className="absolute left-[6%] bottom-[20%] w-40 h-40 float-3d-slow">
-            <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="1.2" className="text-slate-400 w-full h-full">
-              <rect x="30" y="10" width="40" height="30" rx="4" />
-              <line x1="30" y1="20" x2="70" y2="20" />
-              <line x1="30" y1="30" x2="70" y2="30" />
-              <rect x="40" y="40" width="20" height="40" rx="2" />
-              <circle cx="50" cy="80" r="8" />
-            </svg>
-          </div>
-          {/* Spark Plug floating 3D */}
-          <div className="absolute right-[25%] bottom-[12%] w-36 h-36 float-3d-slow" style={{ animationDelay: '-3s' }}>
-            <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="1.2" className="text-red-500 w-full h-full">
-              <line x1="50" y1="5" x2="50" y2="95" strokeWidth="2.5" />
-              <rect x="45" y="20" width="10" height="40" rx="1" fill="currentColor" fillOpacity="0.1" />
-              <rect x="40" y="60" width="20" height="15" rx="2" />
-              <path d="M45 75 L50 90 L55 75 Z" fill="currentColor" />
-              <circle cx="50" cy="92" r="2" fill="currentColor" />
-            </svg>
-          </div>
-        </div>
-
-        {/* Hero Content */}
-        <div className="relative z-10 text-center max-w-4xl mx-auto px-4">
-          {/* Banner Logo Container */}
-          <div className="mb-8 flex justify-center">
-            <div className="bg-slate-900/60 border border-slate-800/80 rounded-3xl p-5 shadow-2xl backdrop-blur-md max-w-xs flex items-center justify-center transition-transform hover:scale-105 duration-500">
-              <img src="/logo.png" alt="AUTOP Logo" className="max-h-24 w-auto object-contain" />
-            </div>
-          </div>
-
-          <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-wider text-white">
-            AUTOP PIÈCE AUTO
-          </h1>
-          <p className="text-sm md:text-base text-red-500 font-extrabold tracking-widest mb-6 uppercase">
-            DISTRIBUTEUR PIÈCES AUTO NEUVES — ORIGINE & PREMIÈRE MONTE
-          </p>
-          <p className="text-base md:text-lg text-slate-300 mb-8 max-w-2xl mx-auto leading-relaxed normal-case">
-            Multimarques Européennes & Asiatiques — Qualité OEM & stock immédiat pour professionnels et particuliers en Tunisie.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link 
-              href="/pieces" 
-              className="chrome-gloss bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition duration-300 shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 hover:scale-[1.03] active:scale-[0.98]"
-            >
-              🔍 Rechercher une pièce
-            </Link>
-            <Link 
-              href="/devis" 
-              className="chrome-gloss bg-slate-900/80 hover:bg-slate-800 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition duration-300 border border-slate-800 flex items-center justify-center gap-2 hover:scale-[1.03] active:scale-[0.98] backdrop-blur-sm shadow-xl"
-            >
-              📋 Demander un devis
-            </Link>
-          </div>
-        </div>
-      </div>
-
+      <HomeSlider />
       {/* Main Content Sections */}
       <div className="max-w-7xl mx-auto px-4 py-16 md:py-24 space-y-24">
         
