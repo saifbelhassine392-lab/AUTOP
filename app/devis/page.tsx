@@ -3,8 +3,11 @@
 import { useState, useEffect } from 'react';
 import { Download, CheckCircle, MessageCircle, FileText, Plus, FileSpreadsheet, Home } from 'lucide-react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 
 export default function DevisPage() {
+  const { data: session } = useSession();
+  
   const [clientName, setClientName] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [brand, setBrand] = useState('');
@@ -12,13 +15,24 @@ export default function DevisPage() {
   const [vin, setVin] = useState('');
   const [remarks, setRemarks] = useState('');
   const [selectedFormat, setSelectedFormat] = useState<'pdf' | 'excel'>('pdf');
+
+  useEffect(() => {
+    if (session?.user) {
+      setClientName(prev => prev || session.user.name || '');
+      setClientEmail(prev => prev || session.user.email || '');
+    }
+  }, [session]);
   
   const [photoBase64, setPhotoBase64] = useState<string | null>(null);
   const [photoName, setPhotoName] = useState<string>('');
+  
+  const [chassisPhotoBase64, setChassisPhotoBase64] = useState<string | null>(null);
+  const [chassisPhotoName, setChassisPhotoName] = useState<string>('');
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedQuoteId, setSubmittedQuoteId] = useState<string | null>(null);
   
-  const [items, setItems] = useState([{ reference: '', designation: '', quantity: 1 }]);
+  const [items, setItems] = useState([{ reference: '', designation: '', quantity: 1, brandPreference: 'Indifférent' }]);
   const [catalogue, setCatalogue] = useState<any[]>([]);
   const [activeSuggestRow, setActiveSuggestRow] = useState<number | null>(null);
   const [activeSuggestField, setActiveSuggestField] = useState<'ref' | 'desc' | null>(null);
@@ -38,7 +52,7 @@ export default function DevisPage() {
   };
 
   const handleAddItem = () => {
-    setItems([...items, { reference: '', designation: '', quantity: 1 }]);
+    setItems([...items, { reference: '', designation: '', quantity: 1, brandPreference: 'Indifférent' }]);
   };
 
   const handleRemoveItem = (index: number) => {
@@ -57,6 +71,16 @@ export default function DevisPage() {
       setPhotoName(file.name);
       const reader = new FileReader();
       reader.onloadend = () => setPhotoBase64(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleChassisFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setChassisPhotoName(file.name);
+      const reader = new FileReader();
+      reader.onloadend = () => setChassisPhotoBase64(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
@@ -312,9 +336,11 @@ export default function DevisPage() {
         photoName: photoName,
         items: items.map(i => ({ 
           reference: i.reference, 
-          designation: i.designation, 
+          designation: `${i.designation} ${i.brandPreference && i.brandPreference !== 'Indifférent' ? `(${i.brandPreference})` : ''}`.trim(), 
           quantity: Number(i.quantity) 
         })),
+        chassisPhoto: chassisPhotoBase64,
+        chassisPhotoName: chassisPhotoName,
         fileBase64,
         fileFormat: selectedFormat === 'pdf' ? 'pdf' : 'csv',
         fileName
@@ -346,9 +372,11 @@ export default function DevisPage() {
     setModel('');
     setVin('');
     setRemarks('');
-    setItems([{ reference: '', designation: '', quantity: 1 }]);
+    setItems([{ reference: '', designation: '', quantity: 1, brandPreference: 'Indifférent' }]);
     setPhotoBase64(null);
     setPhotoName('');
+    setChassisPhotoBase64(null);
+    setChassisPhotoName('');
     setSubmittedQuoteId(null);
   };
 
@@ -466,9 +494,10 @@ export default function DevisPage() {
             <input 
               type="text" 
               placeholder="Numéro VIN (17 caractères)" 
-              className="bg-slate-950/60 text-slate-100 p-3 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all font-mono tracking-wider" 
+              maxLength={17}
+              className="bg-slate-950/60 text-slate-100 p-3 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all font-mono tracking-wider uppercase" 
               value={vin} 
-              onChange={(e) => setVin(e.target.value)} 
+              onChange={(e) => setVin(e.target.value.replace(/[oO]/g, '0').toUpperCase())} 
             />
           </div>
           <div className="flex flex-col md:col-span-2">
@@ -527,6 +556,12 @@ export default function DevisPage() {
                     setActiveSuggestRow(idx);
                     setActiveSuggestField('ref');
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (idx === items.length - 1) handleAddItem();
+                    }
+                  }}
                   onFocus={() => {
                     setActiveSuggestRow(idx);
                     setActiveSuggestField('ref');
@@ -574,6 +609,12 @@ export default function DevisPage() {
                     setActiveSuggestRow(idx);
                     setActiveSuggestField('desc');
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (idx === items.length - 1) handleAddItem();
+                    }
+                  }}
                   onFocus={() => {
                     setActiveSuggestRow(idx);
                     setActiveSuggestField('desc');
@@ -603,6 +644,16 @@ export default function DevisPage() {
                 )}
               </div>
 
+              <select
+                className="w-28 bg-slate-950/60 text-slate-100 p-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-[10px] uppercase font-bold text-center"
+                value={item.brandPreference || 'Indifférent'}
+                onChange={(e) => handleItemChange(idx, 'brandPreference', e.target.value)}
+              >
+                <option value="Indifférent">Indifférent</option>
+                <option value="Origine">Origine</option>
+                <option value="Adaptable">Adaptable</option>
+              </select>
+
               <input 
                 type="number" 
                 min={1} 
@@ -630,13 +681,31 @@ export default function DevisPage() {
 
       {/* Card 3: Chargement de Photos */}
       <div className="tilt-card-3d bg-slate-900/60 backdrop-blur-sm/40 border border-slate-800/80 rounded-[28px] p-6 md:p-8 backdrop-blur-md shadow-xl mb-8">
-        <div className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-4">3. PHOTOS DU VÉHICULE OU DE LA PIÈCE (OPTIONNEL)</div>
-        <input 
-          type="file" 
-          onChange={handleFileChange} 
-          className="text-slate-400 text-xs file:bg-slate-800 file:text-slate-100 file:border-0 file:rounded-xl file:px-4 file:py-2 file:mr-4 file:hover:bg-slate-700 file:cursor-pointer transition-colors" 
-        />
-        {photoName && <span className="text-xs text-green-400 mt-2 block">Fichier prêt : {photoName}</span>}
+        <div className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-4">3. PHOTOS (CARTE GRISE, PIÈCE) - OPTIONNEL</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-slate-950/40 p-4 border border-slate-800 rounded-2xl flex flex-col justify-center">
+            <label className="text-xs font-semibold text-slate-400 mb-2">PHOTO CARTE GRISE / CHÂSSIS</label>
+            <p className="text-[10px] text-slate-500 mb-3">Si vous n'avez pas saisi le VIN, vous pouvez prendre une photo de votre carte grise ou du pare-brise.</p>
+            <input 
+              type="file" 
+              accept="image/*"
+              onChange={handleChassisFileChange} 
+              className="text-slate-400 text-xs file:bg-slate-800 file:text-slate-100 file:border-0 file:rounded-xl file:px-4 file:py-2 file:mr-4 file:hover:bg-slate-700 file:cursor-pointer transition-colors w-full" 
+            />
+            {chassisPhotoName && <span className="text-[10px] text-green-400 font-bold mt-2 block">✓ Fichier prêt : {chassisPhotoName}</span>}
+          </div>
+          <div className="bg-slate-950/40 p-4 border border-slate-800 rounded-2xl flex flex-col justify-center">
+            <label className="text-xs font-semibold text-slate-400 mb-2">AUTRES PHOTOS (PIÈCE, VÉHICULE)</label>
+            <p className="text-[10px] text-slate-500 mb-3">Photo de l'ancienne pièce, dommage sur la carrosserie, etc.</p>
+            <input 
+              type="file" 
+              accept="image/*"
+              onChange={handleFileChange} 
+              className="text-slate-400 text-xs file:bg-slate-800 file:text-slate-100 file:border-0 file:rounded-xl file:px-4 file:py-2 file:mr-4 file:hover:bg-slate-700 file:cursor-pointer transition-colors w-full" 
+            />
+            {photoName && <span className="text-[10px] text-green-400 font-bold mt-2 block">✓ Fichier prêt : {photoName}</span>}
+          </div>
+        </div>
       </div>
 
       <button 

@@ -7,7 +7,7 @@ const httpsAgent = new https.Agent({
   rejectUnauthorized: false,
 });
 
-async function scrapeSTEQ(query: string) {
+async function scrapeSTEQ(query: string, b2bLogin: string, b2bPassword: string) {
   try {
     // 1. Get initial cookie & Login
     const initialRes = await axios.get("https://b2bsteq.com/", {
@@ -22,8 +22,8 @@ async function scrapeSTEQ(query: string) {
     }
 
     const loginParams = new URLSearchParams();
-    loginParams.append("UserCode", "CL0016035");
-    loginParams.append("UserPassword", "STEQ484630925");
+    loginParams.append("UserCode", b2bLogin);
+    loginParams.append("UserPassword", b2bPassword);
     loginParams.append("UserSubmit", "");
 
     const loginRes = await axios.post("https://b2bsteq.com/", loginParams.toString(), {
@@ -38,7 +38,13 @@ async function scrapeSTEQ(query: string) {
     });
 
     const loginCookies = loginRes.headers["set-cookie"];
+    console.log("Login Res Status:", loginRes.status);
+    console.log("Login Cookies:", loginCookies);
     if (loginCookies) {
+      const loginStr = loginCookies.join(";");
+      if (loginStr.includes("deleted")) {
+        throw new Error("Identifiants B2B invalides. Veuillez les corriger dans 'Modifier le fournisseur'.");
+      }
       sessionCookie = loginCookies[0].split(";")[0];
     }
 
@@ -57,11 +63,23 @@ async function scrapeSTEQ(query: string) {
       httpsAgent
     });
 
+    console.log("Session Cookie used:", sessionCookie);
+    console.log("Search Res Status:", searchRes.status);
+    
     const html = searchRes.data;
-
+    console.log("HTML Type:", typeof html);
+    if (typeof html === "string") {
+      console.log("HTML Length:", html.length);
+      console.log("Has Login?", html.includes("Se connecter") || html.includes("Mot de passe") || html.includes("password"));
+      console.log("Has ApiJsonItemAll?", html.includes("ApiJsonItemAll"));
+    }
+    
     // 3. Extract JSON from HTML
-    const jsonMatch = html.match(/var ApiJsonItemAll = (\[.*?\]);/);
+    const jsonMatch = typeof html === "string" ? html.match(/var ApiJsonItemAll = (\[.*?\]);/) : null;
     if (!jsonMatch) {
+      if (typeof html === "string" && (html.includes("VOTRE MOT DE PASSE") || html.includes("UserPassword"))) {
+        throw new Error("Identifiants B2B invalides ou expirés. Veuillez les vérifier dans 'Modifier le fournisseur'.");
+      }
       return { price: 0, discount: 0, availability: "Non Trouvé (Regex Failed)" };
     }
 
@@ -121,8 +139,11 @@ export async function POST(request: Request) {
     const supName = supplier.name.toUpperCase();
 
     if (supName === "STEQ") {
+      if (!supplier.b2bLogin || !supplier.b2bPassword) {
+        return NextResponse.json({ success: false, error: "Veuillez configurer les accès B2B de STEQ (Modifier Fournisseur)" }, { status: 400 });
+      }
       process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-      const res = await scrapeSTEQ(searchQuery);
+      const res = await scrapeSTEQ(searchQuery, supplier.b2bLogin, supplier.b2bPassword);
       searchResult = {
         price: res.price,
         discount: res.discount,

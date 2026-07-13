@@ -120,6 +120,13 @@ export async function POST(req: NextRequest) {
           content: Buffer.from(base64Data, 'base64')
         });
       }
+      if (body.chassisPhoto && body.chassisPhoto.includes('base64,')) {
+        const base64Data = body.chassisPhoto.split(',')[1];
+        attachments.push({
+          filename: body.chassisPhotoName || `chassis-${Date.now()}.jpg`,
+          content: Buffer.from(base64Data, 'base64')
+        });
+      }
 
       await sendEmail({
         to: [clientEmail, 'comptoir.distribution@autop.tn'],

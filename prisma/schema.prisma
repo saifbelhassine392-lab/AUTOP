@@ -234,6 +234,7 @@ model Devis {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   items        DevisItem[]
+  historiques  HistoriquePiece[]
   managedById  String?
   managedBy    AdminProfile? @relation(fields: [managedById], references: [id])
 }
@@ -243,11 +244,13 @@ model DevisItem {
   devisId   String
   devis     Devis    @relation(fields: [devisId], references: [id], onDelete: Cascade)
   name      String
+  reference String?
   price     Float    @default(0)
   quantity  Int      @default(1)
   discount  Float    @default(0)  // Remise en %
   productId String?
   product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  historique HistoriquePiece?
 }
 
 model Supplier {
@@ -265,6 +268,9 @@ model Supplier {
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   purchaseOrders PurchaseOrder[]
+  historiquesOem HistoriquePiece[] @relation("OemSupplier")
+  historiquesAftermarket HistoriquePiece[] @relation("AftermarketSupplier")
+  partPriceHistories PartPriceHistory[]
 }
 
 model PurchaseOrder {
@@ -388,4 +394,36 @@ model ChatMessage {
   attachmentName String?
   attachmentType String?
   createdAt      DateTime @default(now())
+}
+
+model HistoriquePiece {
+  id              String      @id @default(cuid())
+  devisId         String
+  devis           Devis       @relation(fields: [devisId], references: [id], onDelete: Cascade)
+  devisItemId     String      @unique
+  devisItem       DevisItem   @relation(fields: [devisItemId], references: [id], onDelete: Cascade)
+  oemSupplierId   String?
+  oemSupplier     Supplier?   @relation("OemSupplier", fields: [oemSupplierId], references: [id], onDelete: SetNull)
+  oemPurchasePrice Float?
+  oemSellingPrice  Float?
+  amSupplierId    String?
+  amSupplier      Supplier?   @relation("AftermarketSupplier", fields: [amSupplierId], references: [id], onDelete: SetNull)
+  amPurchasePrice Float?
+  amSellingPrice  Float?
+  createdAt       DateTime    @default(now())
+}
+
+model PartPriceHistory {
+  id              String    @id @default(cuid())
+  reference       String
+  supplierId      String?
+  supplier        Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  supplierName    String?   // Utile pour 'Concessionnaire' ou autres hors base
+  purchasePrice   Float?
+  sellingPrice    Float?
+  isConcessionnaire Boolean @default(false)
+  updatedAt       DateTime  @updatedAt
+  createdAt       DateTime  @default(now())
+
+  @@index([reference])
 }

@@ -141,6 +141,32 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // Insérer l'historique des fournisseurs
+    const historiqueData = [];
+    for (let i = 0; i < devis.items.length; i++) {
+      const createdItem = devis.items[i];
+      const sourceItem = items[i]; // correspond par index
+      
+      if (sourceItem.historique && (sourceItem.historique.oemSupplierId || sourceItem.historique.amSupplierId)) {
+        historiqueData.push({
+          devisId: devis.id,
+          devisItemId: createdItem.id,
+          oemSupplierId: sourceItem.historique.oemSupplierId || null,
+          oemPurchasePrice: sourceItem.historique.oemPurchasePrice || null,
+          oemSellingPrice: sourceItem.historique.oemSellingPrice || null,
+          amSupplierId: sourceItem.historique.amSupplierId || null,
+          amPurchasePrice: sourceItem.historique.amPurchasePrice || null,
+          amSellingPrice: sourceItem.historique.amSellingPrice || null,
+        });
+      }
+    }
+    
+    if (historiqueData.length > 0) {
+      await prisma.historiquePiece.createMany({
+        data: historiqueData
+      });
+    }
+
     return NextResponse.json(devis, { status: 201 })
   } catch (error) {
     console.error('Error creating devis:', error)

@@ -45,6 +45,28 @@ export async function POST(
       include: { items: { include: { product: true } }, user: true },
     })
 
+    // Insérer l'historique de chaque pièce (si fourni par le frontend)
+    if (items && items.length > 0) {
+      const historiqueData = items
+        .filter((item: any) => item.historique) // on s'assure qu'un historique est fourni
+        .map((item: any) => ({
+          devisId: params.id,
+          devisItemId: item.id,
+          oemSupplierId: item.historique.oemSupplierId || null,
+          oemPurchasePrice: item.historique.oemPurchasePrice || null,
+          oemSellingPrice: item.historique.oemSellingPrice || null,
+          amSupplierId: item.historique.amSupplierId || null,
+          amPurchasePrice: item.historique.amPurchasePrice || null,
+          amSellingPrice: item.historique.amSellingPrice || null,
+        }))
+
+      if (historiqueData.length > 0) {
+        await prisma.historiquePiece.createMany({
+          data: historiqueData,
+        })
+      }
+    }
+
     return NextResponse.json(devis)
   } catch (error) {
     console.error('Devis respond error:', error)
