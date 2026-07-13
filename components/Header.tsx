@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
 import { useCart } from '@/contexts/CartContext'
 import { useState } from 'react'
-import { ShoppingCart, Menu, X, LogOut, User } from 'lucide-react'
+import { ShoppingCart, Menu, X, LogOut } from 'lucide-react'
 
 export default function Header() {
   const { data: session } = useSession()
@@ -29,10 +29,11 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center">
-            <div className="w-32 h-12 relative flex items-center justify-start">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="w-10 h-10 relative flex items-center justify-center">
               <img src="/logo.png" alt="AUTOP Logo" className="max-h-full max-w-full object-contain" />
             </div>
+            <span className="text-2xl font-black tracking-wider text-red-500">AUTOP</span>
           </Link>
 
           {/* Desktop Nav */}
@@ -64,35 +65,13 @@ export default function Header() {
                 <Link href="/mes-devis" className="text-sm text-slate-400 hover:text-red-500 transition font-medium">
                   Mes Devis
                 </Link>
-                
-                <div className="flex items-center gap-2 border-l border-slate-800 pl-4 relative group cursor-pointer">
-                  <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-white font-black text-sm shrink-0 border border-slate-700 group-hover:border-red-500 transition-colors">
-                    {(user?.name || user?.email || 'C').charAt(0).toUpperCase()}
-                  </div>
-                  <div className="hidden lg:block pr-2">
-                    <p className="text-white font-bold text-xs uppercase leading-none">{user?.name || user?.email?.split('@')[0]}</p>
-                    <p className="text-slate-500 text-[9px] uppercase">{user?.role === 'CUSTOMER' ? 'Client' : 'Pro'}</p>
-                  </div>
-                  
-                  {/* Dropdown Menu */}
-                  <div className="absolute top-full right-0 mt-2 w-48 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden">
-                    <div className="py-1">
-                      <div className="px-4 py-3 border-b border-slate-800 lg:hidden">
-                        <p className="text-white font-bold text-xs uppercase truncate">{user?.name || user?.email?.split('@')[0]}</p>
-                        <p className="text-slate-500 text-[10px] uppercase mt-0.5">{user?.role === 'CUSTOMER' ? 'Client' : 'Pro'}</p>
-                      </div>
-                      <Link href="/mes-devis" className="block px-4 py-2.5 text-sm font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
-                        Mes Devis
-                      </Link>
-                      <button
-                        onClick={() => signOut()}
-                        className="w-full text-left px-4 py-2.5 text-sm font-semibold text-red-500 hover:bg-slate-800 hover:text-red-400 transition-colors flex items-center gap-2"
-                      >
-                        <LogOut className="w-4 h-4" /> Déconnexion
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <button
+                  onClick={() => signOut()}
+                  className="flex items-center space-x-1.5 text-slate-400 hover:text-red-500 transition font-medium"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="text-sm">Déconnexion</span>
+                </button>
               </div>
             ) : (
               <div className="hidden md:flex items-center space-x-4">
@@ -134,18 +113,9 @@ export default function Header() {
               ))}
               {session ? (
                 <>
-                  <div className="flex items-center gap-3 px-2 py-3 mb-2 border-b border-slate-800">
-                    <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-white font-black text-lg shrink-0 border border-slate-700">
-                      {(user?.name || user?.email || 'C').charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="text-white font-bold text-sm uppercase leading-none">{user?.name || user?.email?.split('@')[0]}</p>
-                      <p className="text-slate-500 text-[10px] uppercase mt-1">{user?.role === 'CUSTOMER' ? 'Client' : 'Pro'}</p>
-                    </div>
-                  </div>
                   <Link 
                     href="/mes-devis" 
-                    className="text-slate-300 hover:text-red-500 font-semibold py-2 px-2 transition block text-sm bg-slate-900/50 rounded-lg"
+                    className="text-slate-300 hover:text-red-500 font-semibold py-1 transition block text-sm"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Mes Devis
@@ -155,9 +125,9 @@ export default function Header() {
                       signOut()
                       setMobileMenuOpen(false)
                     }}
-                    className="text-left text-red-500 font-semibold py-2 px-2 transition flex items-center gap-2 text-sm hover:bg-slate-900/50 rounded-lg"
+                    className="text-left text-red-500 font-semibold py-1 transition block text-sm"
                   >
-                    <LogOut className="w-4 h-4" /> Déconnexion
+                    Déconnexion
                   </button>
                 </>
               ) : (
