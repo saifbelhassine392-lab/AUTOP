@@ -3591,8 +3591,11 @@ function SectionChatInterne() {
         setReply('');
         setAttachment(null);
         fetchConversations(); // refresh list
+      } else {
+        alert("Erreur: " + (data.error || "Impossible d'envoyer le message"));
       }
-    } catch (err) {
+    } catch (err: any) {
+      alert("Erreur de connexion: " + err.message);
       console.error(err);
     } finally {
       setSending(false);

@@ -147,8 +147,11 @@ export default function ClientChatWidget() {
         setContent('');
         setReference(null);
         setAttachment(null);
+      } else {
+        alert("Erreur: " + (data.error || "Impossible d'envoyer le message"));
       }
-    } catch (err) {
+    } catch (err: any) {
+      alert("Erreur de connexion: " + err.message);
       console.error(err);
     } finally {
       setLoading(false);
