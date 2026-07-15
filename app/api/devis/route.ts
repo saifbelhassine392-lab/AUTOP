@@ -167,9 +167,10 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(devis, { status: 201 })
-  } catch (error) {
-    console.error('Error creating devis:', error)
-    return NextResponse.json({ error: 'Erreur création devis' }, { status: 500 })
+  } catch (error: any) {
+    console.error('Error creating devis:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: errorMessage ? `Erreur création devis : ${errorMessage}` : "Erreur création devis" }, { status: 500 })
   }
 }
 
