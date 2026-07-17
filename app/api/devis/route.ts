@@ -104,6 +104,7 @@ export async function POST(req: NextRequest) {
 
       devisItems.push({
         name,
+        reference,
         price: parseFloat(item.price || item.puHT) || 0,
         quantity: parseInt(item.quantity || item.qty) || 1,
         discount: parseFloat(item.discount) || 0,

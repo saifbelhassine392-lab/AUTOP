@@ -29,7 +29,7 @@ async function main() {
 }
 main()
 
-async function main() {
+async function main2() {
     try {
         const suppliers = await prisma.supplier.findMany({
             select: { id: true, name: true }
@@ -42,4 +42,4 @@ async function main() {
     }
 }
 
-main();
+main2();
