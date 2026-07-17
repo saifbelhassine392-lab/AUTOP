@@ -365,6 +365,106 @@ export default function DevisPage() {
     }
   };
 
+  const handleExcelImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0]) return;
+    const file = e.target.files[0];
+    
+    try {
+      const XLSX = await import("xlsx");
+      const reader = new FileReader();
+      
+      reader.onload = (evt) => {
+        try {
+          const bstr = evt.target?.result;
+          if (!bstr) return;
+          const wb = XLSX.read(bstr, { type: "binary" });
+          const wsname = wb.SheetNames[0];
+          const ws = wb.Sheets[wsname];
+          const data: any[] = XLSX.utils.sheet_to_json(ws, { header: 1 });
+          
+          if (data.length === 0) {
+            alert("Le fichier Excel est vide.");
+            return;
+          }
+          
+          // Trouver les en-têtes
+          let headerRowIndex = 0;
+          while (headerRowIndex < data.length && (!data[headerRowIndex] || data[headerRowIndex].length === 0)) {
+            headerRowIndex++;
+          }
+          
+          if (headerRowIndex >= data.length) {
+            alert("Aucune donnée trouvée dans le fichier.");
+            return;
+          }
+          
+          const headers = data[headerRowIndex].map((h: any) => String(h || '').trim().toLowerCase());
+          
+          // Identifier les index des colonnes
+          let desCol = headers.findIndex((h: string) => h.includes("desi") || h.includes("nom") || h.includes("article") || h.includes("item") || h.includes("description") || h.includes("libelle") || h.includes("libellé"));
+          let refCol = headers.findIndex((h: string) => h.includes("ref") || h.includes("sku") || h.includes("code") || h.includes("part"));
+          let qteCol = headers.findIndex((h: string) => h.includes("qte") || h.includes("quant") || h.includes("qty") || h.includes("nbr") || h.includes("nombre"));
+          
+          // Fallback par défaut
+          if (desCol === -1 && refCol === -1) {
+            refCol = 0;
+            desCol = 1;
+            qteCol = data[headerRowIndex].length > 2 ? 2 : -1;
+          }
+          
+          const importedItems: any[] = [];
+          const startRow = (headers.includes("reference") || headers.includes("designation") || headers.includes("ref") || headers.includes("desi")) ? headerRowIndex + 1 : headerRowIndex;
+          
+          for (let i = startRow; i < data.length; i++) {
+            const row = data[i];
+            if (!row || row.length === 0) continue;
+            
+            const designation = desCol !== -1 ? String(row[desCol] || '').trim() : '';
+            const reference = refCol !== -1 ? String(row[refCol] || '').trim().toUpperCase() : '';
+            
+            let quantity = 1;
+            if (qteCol !== -1 && row[qteCol] !== undefined) {
+              const parsedQte = parseInt(row[qteCol]);
+              if (!isNaN(parsedQte) && parsedQte > 0) {
+                quantity = parsedQte;
+              }
+            }
+            
+            if (designation || reference) {
+              importedItems.push({
+                reference,
+                designation,
+                quantity,
+                brandPreference: 'Indifférent'
+              });
+            }
+          }
+          
+          if (importedItems.length === 0) {
+            alert("Aucune ligne valide n'a pu être importée. Assurez-vous d'avoir des colonnes valides.");
+            return;
+          }
+          
+          if (items.length === 1 && !items[0].reference && !items[0].designation) {
+            setItems(importedItems);
+          } else {
+            setItems([...items, ...importedItems]);
+          }
+          
+          alert(`${importedItems.length} article(s) importé(s) avec succès !`);
+        } catch (err) {
+          console.error(err);
+          alert("Erreur lors de la lecture du fichier Excel.");
+        }
+      };
+      
+      reader.readAsBinaryString(file);
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors du chargement du module d'import.");
+    }
+  };
+
   const handleResetForm = () => {
     setClientName('');
     setClientEmail('');
@@ -671,12 +771,25 @@ export default function DevisPage() {
             </div>
           ))}
         </div>
-        <button 
-          onClick={handleAddItem} 
-          className="text-xs text-red-500 hover:text-red-400 font-bold mt-4 inline-block transition-colors"
-        >
-          ➕ Ajouter une autre pièce
-        </button>
+        <div className="flex gap-4 items-center mt-4">
+          <button 
+            onClick={handleAddItem} 
+            className="text-xs text-red-500 hover:text-red-400 font-bold transition-colors"
+          >
+            ➕ Ajouter une autre pièce
+          </button>
+          <span className="text-slate-700 text-xs">|</span>
+          <label className="text-xs text-green-500 hover:text-green-400 font-bold cursor-pointer transition-colors flex items-center gap-1.5 select-none">
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            Importer Excel (.xlsx, .csv)
+            <input 
+              type="file" 
+              accept=".xlsx,.xls,.csv" 
+              onChange={handleExcelImport} 
+              className="hidden" 
+            />
+          </label>
+        </div>
       </div>
 
       {/* Card 3: Chargement de Photos */}
