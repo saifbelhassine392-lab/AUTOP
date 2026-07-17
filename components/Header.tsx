@@ -61,12 +61,15 @@ export default function Header() {
 
             {session ? (
               <div className="hidden md:flex items-center space-x-4">
-                <Link href="/mes-devis" className="text-sm text-slate-400 hover:text-red-500 transition font-medium">
+                <span className="text-xs text-slate-300 font-bold bg-slate-900/60 border border-slate-800/80 px-3 py-1.5 rounded-full uppercase tracking-wider">
+                  👤 {user?.name || user?.email?.split('@')[0]}
+                </span>
+                <Link href="/mes-devis" className="text-sm text-slate-400 hover:text-red-500 transition font-semibold">
                   Mes Devis
                 </Link>
                 <button
-                  onClick={() => signOut()}
-                  className="flex items-center space-x-1.5 text-slate-400 hover:text-red-500 transition font-medium"
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                  className="flex items-center space-x-1.5 text-slate-400 hover:text-red-500 transition font-semibold border-l border-slate-850 pl-4"
                 >
                   <LogOut className="w-4 h-4" />
                   <span className="text-sm">Déconnexion</span>
@@ -112,20 +115,24 @@ export default function Header() {
               ))}
               {session ? (
                 <>
+                  <div className="text-slate-400 font-bold py-1 px-2 border-b border-slate-800 text-[11px] uppercase tracking-wider">
+                    👤 Connecté : <span className="text-red-500 font-black">{user?.name || user?.email?.split('@')[0]}</span>
+                  </div>
                   <Link 
                     href="/mes-devis" 
-                    className="text-slate-300 hover:text-red-500 font-semibold py-1 transition block text-sm"
+                    className="text-slate-300 hover:text-red-500 font-semibold py-2 transition block text-sm"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Mes Devis
                   </Link>
                   <button
                     onClick={() => {
-                      signOut()
+                      signOut({ callbackUrl: '/' })
                       setMobileMenuOpen(false)
                     }}
-                    className="text-left text-red-500 font-semibold py-1 transition block text-sm"
+                    className="text-left text-red-500 font-semibold py-2 transition block text-sm flex items-center gap-1.5"
                   >
+                    <LogOut className="w-4 h-4" />
                     Déconnexion
                   </button>
                 </>

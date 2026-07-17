@@ -63,6 +63,7 @@ export default function MesDevisPage() {
             id: it.id,
             productId: it.productId,
             name: it.name,
+            reference: it.reference || it.product?.reference || '',
             price: it.price || 0,
             quantity: it.quantity || 1,
             discount: it.discount || 0
@@ -85,6 +86,7 @@ export default function MesDevisPage() {
             id: it.id,
             productId: null,
             name: `${it.designation} (Réf: ${it.reference || 'N/A'})`,
+            reference: it.reference || '',
             price: 0,
             quantity: it.quantity || 1
           }))
@@ -527,6 +529,12 @@ export default function MesDevisPage() {
                 const seqIndex = devisListSorted.findIndex(item => item.id === d.id);
                 const seqNumber = seqIndex !== -1 ? String(seqIndex + 1).padStart(6, '0') : '';
                 const searchLower = clientSearch.toLowerCase();
+                
+                const matchesItems = (d.items || []).some((it: any) => 
+                  it.name?.toLowerCase().includes(searchLower) ||
+                  it.reference?.toLowerCase().includes(searchLower)
+                );
+
                 return (
                   `dev-${seqNumber}`.includes(searchLower) ||
                   seqNumber.includes(searchLower) ||
@@ -534,7 +542,8 @@ export default function MesDevisPage() {
                   d.brand?.toLowerCase().includes(searchLower) ||
                   d.model?.toLowerCase().includes(searchLower) ||
                   d.vin?.toLowerCase().includes(searchLower) ||
-                  d.status?.toLowerCase().includes(searchLower)
+                  d.status?.toLowerCase().includes(searchLower) ||
+                  matchesItems
                 );
               });
 
@@ -632,7 +641,10 @@ export default function MesDevisPage() {
                   o.orderNumber?.toLowerCase().includes(searchLower) ||
                   o.status?.toLowerCase().includes(searchLower) ||
                   o.customerNote?.toLowerCase().includes(searchLower) ||
-                  o.items?.some((item: any) => item.productName?.toLowerCase().includes(searchLower))
+                  o.items?.some((item: any) => 
+                    item.productName?.toLowerCase().includes(searchLower) ||
+                    item.sku?.toLowerCase().includes(searchLower)
+                  )
                 );
               });
               return (
@@ -686,13 +698,29 @@ export default function MesDevisPage() {
             })()}
 
             {/* TAB FACTURES */}
-            {activeTab === 'factures' && (
-              <div className="space-y-6">
-                {orders.filter(o => o.status === 'DELIVERED').length === 0 && (
-                  <p className="text-slate-500 py-10 text-center uppercase tracking-widest text-xs">Aucune facture disponible. Les factures sont émises après livraison.</p>
-                )}
+            {activeTab === 'factures' && (() => {
+              const filteredFactures = orders.filter(o => {
+                if (o.status !== 'DELIVERED') return false;
+                const searchLower = clientSearch.toLowerCase();
+                const factNumber = o.orderNumber.replace('CMD', 'FAC');
+                return (
+                  factNumber.toLowerCase().includes(searchLower) ||
+                  o.orderNumber?.toLowerCase().includes(searchLower) ||
+                  o.customerNote?.toLowerCase().includes(searchLower) ||
+                  o.items?.some((item: any) => 
+                    item.productName?.toLowerCase().includes(searchLower) ||
+                    item.sku?.toLowerCase().includes(searchLower)
+                  )
+                );
+              });
 
-                {orders.filter(o => o.status === 'DELIVERED').map((o) => (
+              return (
+                <div className="space-y-6">
+                  {filteredFactures.length === 0 && (
+                    <p className="text-slate-500 py-10 text-center uppercase tracking-widest text-xs">Aucune facture disponible. Les factures sont émises après livraison.</p>
+                  )}
+
+                  {filteredFactures.map((o) => (
                   <div key={o.id} className="bg-slate-900/40 border border-slate-800/60 rounded-3xl p-6 backdrop-blur-md flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-slate-700/60 transition duration-305 shadow-xl">
                     <div>
                       <h3 className="font-black text-white font-mono text-sm tracking-wider">FACTURE #{o.orderNumber.replace('CMD', 'FAC')}</h3>
@@ -756,7 +784,8 @@ export default function MesDevisPage() {
                   </div>
                 ))}
               </div>
-            )}
+            );
+          })()}
           </div>
         </div>
       </div>
